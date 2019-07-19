@@ -1,8 +1,8 @@
-## Interface: 80100
+## Interface: 80200
 ## Author: Cilraaz
 ## Title: EmoteLDB
 ## Notes: Allows you to easily access emotes, saving the time and hassle of memorizing the emote commands!  Ported from TitanEmoteMenu by Dsanai of Whisperwind.
-## Version: 8.1.0-1.1
+## Version: 8.2.0-1.0
 ## X-Category: 
 ## X-eMail: Cilraaz@gmail.com
 ## X-Website: 
