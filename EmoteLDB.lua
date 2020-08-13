@@ -27,7 +27,7 @@ local string = _G.string
 local pairs = _G.pairs
 local gsub = string.gsub
 
-local emoteVer = "8.3.0-1.1"
+local emoteVer = "9.0.1-1.0"
 
 -- Debug setting
 addon.debug = false
@@ -35,16 +35,14 @@ addon.debug = false
 -- Declare Libs
 local self = EmoteLDB
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
-local QTC = LibStub('LibQTip-1.0')
+local QTC = LibStub('LibQTipELDB-1.0')
 local icon = LibStub("LibDBIcon-1.0")
 
 -- Variables for tooltip and Data Object
 local ELDBTip
 local options
 local EmoteLDBObj
-local backdrop = nil
-local tipcfg = {}
-tipcfg.backdrop = {
+local tipcfg = {
   bgFile = "Interface/Tooltips/UI-Tooltip-Background-Azerite",
   edgeFile = "Interface/Tooltips/UI-Tooltip-Border-Azerite",
   tile = false,
@@ -53,8 +51,6 @@ tipcfg.backdrop = {
   edgeSize = 16,
   insets = {left=3, right=3, top=3, bottom=3}
 }
-tipcfg.backdrop.bgColor = TOOLTIP_AZERITE_BACKGROUND_COLOR
-tipcfg.backdrop.borderColor = TOOLTIP_DEFAULT_COLOR
 
 -- Variables/Tables for emote compilation/output
 local info = nil
@@ -306,21 +302,6 @@ EmoteLDBObj = ldb:NewDataObject("EmoteLDB", {
   
 -- Initialization
 function EmoteLDB:OnInitialize()
-  -- Set backdrop variables
-  backdrop = GAME_TOOLTIP_BACKDROP_STYLE_DEFAULT
-  backdrop.bgFile = tipcfg.backdrop.bgFile
-  backdrop.edgeFile = tipcfg.backdrop.edgeFile
-  backdrop.tile = tipcfg.backdrop.tile
-  backdrop.tileEdge = tipcfg.backdrop.tileEdge
-  backdrop.tileSize = tipcfg.backdrop.tileSize
-  backdrop.edgeSize = tipcfg.backdrop.edgeSize
-  backdrop.insets = tipcfg.backdrop.insets
-  backdrop.backdropColor = TOOLTIP_AZERITE_BACKGROUND_COLOR
-  backdrop.backdropBorderColor = TOOLTIP_DEFAULT_COLOR
-  backdrop.backdropColor.GetRGB = ColorMixin.GetRGBA
-  backdrop.backdropBorderColor.GetRGB = ColorMixin.GetRGBA
-  backdrop.bgColor = tipcfg.backdrop.bgColor
-  backdrop.borderColor = tipcfg.backdrop.borderColor
   self.db = LibStub("AceDB-3.0"):New("EmoteLDBDB", defaults)
   icon:Register("EmoteLDB", EmoteLDBObj, self.db.global.LibDBIcon) -- Minimap
   if self.db.global.LibDBIcon.hide then
@@ -395,9 +376,9 @@ function EmoteLDB:BuildTooltip(key, info)
   EmoteLDBHeaderFont:SetFont(EmoteLDBHeaderFont:GetFont(), 15)
   
   -- Create the tooltip background
-  ELDBTip:SetBackdrop(backdrop)
-  ELDBTip:SetBackdropColor(backdrop.backdropColor:GetRGBA())
-  ELDBTip:SetBackdropBorderColor(backdrop.backdropBorderColor:GetRGBA())
+  ELDBTip:SetBackdrop(tipcfg)
+  ELDBTip:SetBackdropColor(0, 0, 0, 1)
+  ELDBTip:SetBackdropBorderColor(255, 223, 0)
 
   -- Dump the header into the tooltip
   local y = ELDBTip:AddLine()
