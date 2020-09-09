@@ -977,6 +977,9 @@ function addon:LoadTranslations(AL)
 
 		L["massage"] = "Ihr braucht eine Massage!"
 		L["massage_target"] = "Ihr massiert die Schultern von <Target>."
+    
+    L["meow"] = "Ihr miaust."
+    L["meow_target"] = "Ihr miaust bei <Target>."
 
 		L["moan"] = "Ihr st\195\182hnt vielsagend."
 		L["moan_target"] = "Ihr st\195\182hnt <Target> vielsagend an."
