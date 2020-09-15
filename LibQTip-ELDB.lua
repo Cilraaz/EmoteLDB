@@ -1,5 +1,5 @@
 local MAJOR = "LibQTipELDB-1.0"
-local MINOR = 1 -- Should be manually increased
+local MINOR = 2 -- Should be manually increased
 local LibStub = _G.LibStub
 
 assert(LibStub, MAJOR .. " requires LibStub")
