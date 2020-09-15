@@ -34,6 +34,8 @@ local UIParent = _G.UIParent
 
 local geterrorhandler = _G.geterrorhandler
 
+local tocversion = select(4, GetBuildInfo())
+
 ------------------------------------------------------------------------------
 -- Tables and locals
 ------------------------------------------------------------------------------
@@ -67,7 +69,12 @@ local cellMetatable = lib.cellMetatable
 
 local activeTooltips = lib.activeTooltips
 
-local highlightFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+local highlightFrame
+if tocversion >= 90000 then
+  highlightFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+else 
+  highlightFrame = CreateFrame("Frame", nil, UIParent)
+end
 highlightFrame:SetFrameStrata("TOOLTIP")
 highlightFrame:Hide()
 
@@ -170,9 +177,9 @@ local frameHeap = lib.frameHeap
 local function AcquireFrame(parent)
   local frame = tremove(frameHeap) or CreateFrame("Frame")
   frame:SetParent(parent)
-  --@debug@
+  --[===[@debug@
   usedFrames = usedFrames + 1
-  --@end-debug@
+  --@end-debug@]===]
   return frame
 end
 
@@ -185,9 +192,9 @@ local function ReleaseFrame(frame)
   ClearFrameScripts(frame)
 
   tinsert(frameHeap, frame)
-  --@debug@
+  --[===[@debug@
   usedFrames = usedFrames - 1
-  --@end-debug@
+  --@end-debug@]===]
 end
 
 ------------------------------------------------------------------------------
@@ -222,7 +229,11 @@ function providerPrototype:AcquireCell()
   local cell = tremove(self.heap)
 
   if not cell then
-    cell = setmetatable(CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate"), self.cellMetatable)
+    if tocversion >= 90000 then
+      cell = setmetatable(CreateFrame("Frame", nil, UIParent, "BackdropTemplate"), self.cellMetatable)
+    else
+      cell = setmetatable(CreateFrame("Frame", nil, UIParent), self.cellMetatable)
+    end
 
     if type(cell.InitializeCell) == "function" then
       cell:InitializeCell()
@@ -361,25 +372,39 @@ function AcquireTooltip()
   local tooltip = tremove(tooltipHeap)
 
   if not tooltip then
-    tooltip = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+    if tocversion >= 90000 then
+      tooltip = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    else
+      tooltip = CreateFrame("Frame", nil, UIParent)
+    end
 
-    local scrollFrame = CreateFrame("ScrollFrame", nil, tooltip, BackdropTemplateMixin and "BackdropTemplate")
+    local scrollFrame
+    if tocversion >= 90000 then
+      scrollFrame = CreateFrame("ScrollFrame", nil, tooltip, "BackdropTemplate")
+    else
+      scrollFrame = CreateFrame("ScrollFrame", nil, tooltip)
+    end
     scrollFrame:SetPoint("TOP", tooltip, "TOP", 0, -TOOLTIP_PADDING)
     scrollFrame:SetPoint("BOTTOM", tooltip, "BOTTOM", 0, TOOLTIP_PADDING)
     scrollFrame:SetPoint("LEFT", tooltip, "LEFT", TOOLTIP_PADDING, 0)
     scrollFrame:SetPoint("RIGHT", tooltip, "RIGHT", -TOOLTIP_PADDING, 0)
     tooltip.scrollFrame = scrollFrame
 
-    local scrollChild = CreateFrame("Frame", nil, tooltip.scrollFrame, BackdropTemplateMixin and "BackdropTemplate")
+    local scrollChild
+    if tocversion >= 90000 then
+      scrollChild = CreateFrame("Frame", nil, tooltip.scrollFrame, "BackdropTemplate")
+    else
+      scrollChild = CreateFrame("Frame", nil, tooltip.scrollFrame)
+    end
     scrollFrame:SetScrollChild(scrollChild)
     tooltip.scrollChild = scrollChild
 
     setmetatable(tooltip, tipMetatable)
   end
 
-  --@debug@
+  --[===[@debug@
   usedTooltips = usedTooltips + 1
-  --@end-debug@
+  --@end-debug@]===]
   return tooltip
 end
 
@@ -442,9 +467,9 @@ function ReleaseTooltip(tooltip)
   highlightTexture:SetTexture(DEFAULT_HIGHLIGHT_TEXTURE_PATH)
   highlightTexture:SetTexCoord(0, 1, 0, 1)
 
-  --@debug@
+  --[===[@debug@
   usedTooltips = usedTooltips - 1
-  --@end-debug@
+  --@end-debug@]===]
 end
 
 ------------------------------------------------------------------------------
@@ -492,9 +517,9 @@ local tableHeap = lib.tableHeap
 -- Returns a table
 function AcquireTable()
   local tbl = tremove(tableHeap) or {}
-  --@debug@
+  --[===[@debug@
   usedTables = usedTables + 1
-  --@end-debug@
+  --@end-debug@]===]
   return tbl
 end
 
@@ -502,9 +527,9 @@ end
 function ReleaseTable(tableInstance)
   wipe(tableInstance)
   tinsert(tableHeap, tableInstance)
-  --@debug@
+  --[===[@debug@
   usedTables = usedTables - 1
-  --@end-debug@
+  --@end-debug@]===]
 end
 
 ------------------------------------------------------------------------------
@@ -732,7 +757,12 @@ function tipPrototype:UpdateScrolling(maxheight)
     self.scrollFrame:SetPoint("RIGHT", self, "RIGHT", -(TOOLTIP_PADDING + 20), 0)
 
     if not self.slider then
-      local slider = CreateFrame("Slider", nil, self, BackdropTemplateMixin and "BackdropTemplate")
+      local slider
+      if tocversion >= 90000 then
+        slider = CreateFrame("Slider", nil, self, "BackdropTemplate")
+      else
+        slider = CreateFrame("Slider", nil, self)
+      end
       slider.scrollFrame = self.scrollFrame
 
       slider:SetOrientation("VERTICAL")
