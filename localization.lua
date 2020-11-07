@@ -74,6 +74,9 @@ function addon:LoadTranslations(AL)
 
     L["bladeintro"] = "wants to introduce <his> blade to someone."
     L["bladeintro_target"] = "wants to introduce <Target> to <his> blade."
+    
+    L["mountspecial"] = "Perform /mountspecial."
+    L["mountspecial_target"] = "Perform /mountspecial."
 
     L["agree"] = "You agree."
     L["agree_target"] = "You agree with <Target>."
@@ -683,6 +686,9 @@ function addon:LoadTranslations(AL)
 
     L["bladeintro"] = "will allen <his> Schwert vorstellen."
     L["bladeintro_target"] = "will <Target> <his> Schwert vorstellen."
+    
+    L["mountspecial"] = "Ausf\195\188hren /mountspecial."
+    L["mountspecial_target"] = "Ausf\195\188hren /mountspecial."
 
     L["agree"] = "Ihr stimmt zu."
     L["agree_target"] = "Ihr stimmt <Target> zu."
@@ -1260,7 +1266,9 @@ function addon:LoadTranslations(AL)
     L["Vocal"] = "Голос" -- "V"ocal shortened
     L["AV"] = "Д+Г" -- "A"ction/"V"ocal shortened
 
-    
+    L["mountspecial"] = "Выполнить /mountspecial."
+    L["mountspecial_target"] = "Выполнить /mountspecial."
+
     L["agree"] = "Вы соглашаетесь."
     L["agree_target"] = "Вы соглашаетесь с <Target>."
     

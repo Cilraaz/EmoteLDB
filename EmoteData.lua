@@ -65,6 +65,13 @@ EL_Emotes = {
     ["react"] = 0,
     ["custom"] = {1},
   },
+  ["mountspecial"] = { -- /mountspecial
+    ["types"] = {4,13},
+    ["none"] = L["mountspecial"],
+    ["target"] = L["mountspecial_target"],
+    ["react"] = 1,
+    ["custom"] = {0},
+  },
   ["agree"] = { -- Begin Blizzard emotes
     ["types"] = {12},
     ["none"] = L["agree"],
@@ -1319,5 +1326,3 @@ EL_Emotes = {
     ["custom"] = {0},
   },
 }
-
-

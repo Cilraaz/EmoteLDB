@@ -21,13 +21,11 @@ end
 addon.L = L
 
 -- Set up environment variables
-local _G = getfenv(0)
-
 local string = _G.string
 local pairs = _G.pairs
 local gsub = string.gsub
 
-local emoteVer = "9.0.1-1.2"
+local emoteVer = "9.0.1-1.3"
 
 -- Debug setting
 addon.debug = false
@@ -76,10 +74,11 @@ function EmoteLDB:GetOnDemandText(v,hasTarget)
   local flag = nil
   local returnCode
   local emoteText
+  local firstType = EL_Types[v["types"][1]]
 
   if (hasTarget) then emoteText = v.target else emoteText = v.none end
   
-  if (EL_Types[v["types"][1]] and EL_Types[v["types"][1]]=="Custom") then
+  if (firstType == "Custom") then
     emoteText = UnitName("player").." "..emoteText
   end
 
@@ -122,7 +121,8 @@ function HandleModClick(_, k)
   -- Handle an emote click
   if (k and k ~= "catList") then
     -- Custom emote
-    if (EL_Types[EL_Emotes[k]["types"][1]] and EL_Types[EL_Emotes[k]["types"][1]]=="Custom") then
+    local firstType = EL_Types[EL_Emotes[k]["types"][1]]
+    if (firstType == "Custom") then
       local emoteText
       local hasTarget = UnitName("target")
       local genderCode = UnitSex("player")
