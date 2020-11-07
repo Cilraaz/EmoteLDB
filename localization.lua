@@ -618,14 +618,6 @@ function addon:LoadTranslations(AL)
   elseif locale == "deDE" then
 
     -- German translations courtesy of DirtyHarryGermany of Curse!
-    -- UTF-8 encoding table and Unicode characters:
-    -- � = \195\188
-    -- � = \195\156
-    -- � = \195\164
-    -- � = \195\132
-    -- � = \195\182
-    -- � = \195\150
-    -- � = \195\159
   
     -- Random addon strings
     L["Last Emote Used"] = "Zuletzt benutztes Emote"
