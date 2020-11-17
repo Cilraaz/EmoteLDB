@@ -25,7 +25,7 @@ local string = _G.string
 local pairs = _G.pairs
 local gsub = string.gsub
 
-local emoteVer = "9.0.1-1.3"
+local emoteVer = "9.0.2-1.0"
 
 -- Debug setting
 addon.debug = false
