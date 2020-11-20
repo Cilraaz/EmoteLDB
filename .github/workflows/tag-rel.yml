@@ -15,6 +15,7 @@ jobs:
       - name: Get Tag
         id: vars
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=oldtag::$(git describe --abbrev=0 --tags $(git describe --abbrev=0 --tags)^)
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
@@ -29,7 +30,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: EmoteLDB
           body: |
-            Changes: https://github.com/Cilraaz/EmoteLDB/compare/${{ steps.previous-tag.outputs.tag }}...${{ steps.vars.outputs.tag }}
+            Changes: https://github.com/Cilraaz/EmoteLDB/compare/${{ steps.vars.outputs.oldtag }}...${{ steps.vars.outputs.tag }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
@@ -39,4 +40,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: 
+          asset_path: ./EmoteLDB-${{ steps.vars.outputs.tag }}.zip
+          asset_name: EmoteLDB-${{ steps.vars.output.tag }}.zip
+          asset_content_type: applicaton/zip
