@@ -18,7 +18,7 @@ jobs:
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
-          filename: 'EmoteLDB-${{ github.ref }}.zip'
+          filename: EmoteLDB-${{ github.ref }}.zip
           exclusions: '*.git* *.pkgmeta'
       - name: Create Release
         id: create_release
