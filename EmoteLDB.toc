@@ -6,6 +6,8 @@
 ## X-Category: 
 ## X-eMail: Cilraaz@gmail.com
 ## X-Website: 
+## X-Curse-Project-ID: 2441
+## X-WoWI-ID: 5022
 ## SavedVariables: EmoteLDBDB
 ## OptionalDeps: Ace3, LibQTip-1.0, LibDBIcon-1.0
 
