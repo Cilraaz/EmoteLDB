@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Get Previous Tag
-        id: previous-tag
-        uses: WyriHaximus/github-action-get-previous-tag@master
+      - name: Get Tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
-          filename: EmoteLDB-${{ github.ref }}.zip
+          filename: EmoteLDB-${{ steps.vars.outputs.tag }}.zip
           exclusions: '*.git* *.pkgmeta'
       - name: Create Release
         id: create_release
@@ -29,7 +29,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: EmoteLDB
           body: |
-            Changes: https://github.com/Cilraaz/EmoteLDB/compare/${{ steps.previous-tag.outputs.tag }}...${{ github.ref }}
+            Changes: https://github.com/Cilraaz/EmoteLDB/compare/${{ steps.previous-tag.outputs.tag }}...${{ steps.vars.outputs.tag }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
