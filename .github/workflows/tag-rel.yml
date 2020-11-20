@@ -24,8 +24,8 @@ jobs:
           mkdir .packager
           cd .packager
           git clone https://github.com/BigWigsMods/packager.git .
+          sh release.sh
           cd ..
-          sh .packager/release.sh
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
