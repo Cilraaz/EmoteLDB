@@ -1,3 +1,4 @@
 **/.svn/**
 **/.git/**
 checkout.sh
+.release/
