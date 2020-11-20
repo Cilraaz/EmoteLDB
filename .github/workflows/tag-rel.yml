@@ -15,8 +15,11 @@ jobs:
       - name: Get Previous Tag
         id: previous-tag
         uses: WyriHaximus/github-action-get-previous-tag@master
-      - name: Build Zip
-        run: zip EmoteLDB-${{ github.ref }}.zip * -x .github/* -x .git* -x .pkgmeta
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'EmoteLDB-${{ github.ref }}.zip'
+          exclusions: '*.git* *.pkgmeta'
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
