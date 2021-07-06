@@ -2,13 +2,12 @@
 ## Author: Cilraaz
 ## Title: EmoteLDB
 ## Notes: Allows you to easily access emotes, saving the time and hassle of memorizing the emote commands!  Ported from TitanEmoteMenu by Dsanai of Whisperwind.
-## Version: 9.1.0.02
+## Version: 9.1.0.01
 ## X-Category: 
 ## X-eMail: Cilraaz@gmail.com
 ## X-Website: 
 ## X-Curse-Project-ID: 2441
 ## X-WoWI-ID: 5022
-## X-Wago-ID: JZKbwkG1
 ## SavedVariables: EmoteLDBDB
 ## OptionalDeps: Ace3, LibQTip-1.0, LibDBIcon-1.0
 
