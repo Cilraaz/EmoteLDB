@@ -112,7 +112,7 @@ function addon:LoadTranslations(AL)
     L["beg_target"] = "You beg <Target>. How pathetic."
 
     L["belch"] = "You let out a loud belch."
-    L["belch_target"] = "You burp rudely in <Target>'s face."
+    L["belch_target"] = "You let out a loud belch."
 
     L["bite"] = "You look around for someone to bite."
     L["bite_target"] = "You bite <Target>. Ouch!"
@@ -131,9 +131,9 @@ function addon:LoadTranslations(AL)
 
     L["bonk"] = "You bonk yourself on the noggin. Doh!"
     L["bonk_target"] = "You bonk <Target> on the noggin. Doh!"
-        
-        L["boop"] = "You boop your own nose. Boop!"
-        L["boop_target"] = "You boop <Target>'s nose."
+
+    L["boop"] = "You boop your own nose. Boop!"
+    L["boop_target"] = "You boop <Target>'s nose."
 
     L["bored"] = "You are overcome with boredom. Oh the drudgery!"
     L["bored_target"] = "You are terribly bored with <Target>."
@@ -187,7 +187,7 @@ function addon:LoadTranslations(AL)
     L["congrats_target"] = "You congratulate <Target>."
 
     L["cough"] = "You let out a hacking cough."
-    L["cough_target"] = "You cough at <Target>."
+    L["cough_target"] = "You let out a hacking cough."
 
     L["cower"] = "You cower in fear."
     L["cower_target"] = "You cower in fear at the sight of <Target>."
@@ -223,7 +223,7 @@ function addon:LoadTranslations(AL)
     L["drink_target"] = "You raise a drink to <Target>. Cheers!"
 
     L["drool"] = "A tendril of drool runs down your lip."
-    L["drool_target"] = "You look at <Target> and begin to drool."
+    L["drool_target"] = "A tendril of drool runs down your lip."
 
     L["duck"] = "You duck for cover."
     L["duck_target"] = "You duck behind <Target>."
@@ -291,8 +291,8 @@ function addon:LoadTranslations(AL)
     L["grin"] = "You grin wickedly."
     L["grin_target"] = "You grin wickedly at <Target>."
 
-    L["groan"] = "You begin to groan."
-    L["groan_target"] = "You look at <Target> and groan."
+    L["groan"] = "You begin to groan in pain."
+    L["groan_target"] = "You look at <Target> and groan in pain."
 
     L["grovel"] = "You grovel on the ground, wallowing in subservience."
     L["grovel_target"] = "You grovel before <Target> like a subservient peon."
@@ -329,6 +329,12 @@ function addon:LoadTranslations(AL)
 
     L["hungry"] = "You are hungry!"
     L["hungry_target"] = "You are hungry. Maybe <Target> has some food..."
+
+    L["huzzah"] = "You cheer boisterously! Huzzah!"
+    L["huzzah_target"] = "You cheer boisterously for <Target>! Huzzah!"
+
+    L["impressed"] = "You clap vigorously, clearly impressed."
+    L["impressed_target"] = "You clap vigorously for <Target>, clearly impressed."
 
     L["incoming"] = "You yell incoming enemies!"
     L["incoming_target"] = "You yell incoming enemies!"
@@ -369,14 +375,14 @@ function addon:LoadTranslations(AL)
     L["love"] = "You feel the love."
     L["love_target"] = "You love <Target>."
 
+    L["magnificent"] = "You nod approvingly. Magnificent job!"
+    L["magnificent_target"] = "You nod approvingly at <Target>. Magnificent job!"
+
     L["massage"] = "You need a massage!"
     L["massage_target"] = "You massage <Target>'s shoulders."
     
     L["meow"] = "You meow."
     L["meow_target"] = "You meow at <Target>."
-
-    L["moan"] = "You moan suggestively."
-    L["moan_target"] = "You moan suggestively at <Target>."
 
     L["mock"] = "You mock life and all it stands for."
     L["mock_target"] = "You mock the foolishness of <Target>."
@@ -385,7 +391,7 @@ function addon:LoadTranslations(AL)
     L["moo_target"] = "You moo at <Target>. Mooooooooooo."
 
     L["moon"] = "You drop your trousers and moon everyone."
-    L["moon_target"] = "You drop your trousers and moon <Target>."
+    L["moon_target"] = "You drop your trousers and moon everyone."
 
     L["mourn"] = "In quiet contemplation, you mourn the loss of the dead."
     L["mourn_target"] = "In quiet contemplation, you mourn the death of <Target>."
@@ -430,7 +436,7 @@ function addon:LoadTranslations(AL)
     L["ponder_target"] = "You ponder <Target>'s actions."
 
     L["pounce"] = "You pounce out from the shadows."
-    L["pounce_target"] = "You pounce on top of <Target>."
+    L["pounce_target"] = "You pounce towards <Target>."
 
     L["pray"] = "You pray to the Gods."
     L["pray_target"] = "You say a prayer for <Target>."
@@ -452,9 +458,6 @@ function addon:LoadTranslations(AL)
 
     L["ready"] = "You let everyone know that you are ready!"
     L["ready_target"] = "You let <Target> know that you are ready!"
-
-    L["rear"] = "You shake your rear."
-    L["rear_target"] = "You shake your rear at <Target>."
     
     L["regret"] = "You are filled with regret."
     L["regret_target"] = "You think that <Target> will regret it."
@@ -510,9 +513,6 @@ function addon:LoadTranslations(AL)
     L["sleep"] = "You fall asleep. Zzzzzzz."
     L["sleep_target"] = "You fall asleep. Zzzzzzz."
 
-    L["smell"] = "You smell the air around you. Wow, someone stinks!"
-    L["smell_target"] = "You smell <Target>. Wow, someone stinks!"
-
     L["smile"] = "You smile."
     L["smile_target"] = "You smile at <Target>."
 
@@ -535,7 +535,7 @@ function addon:LoadTranslations(AL)
     L["soothe_target"] = "You soothe <Target>. There, there...things will be ok."
 
     L["spit"] = "You spit on the ground."
-    L["spit_target"] = "You spit on <Target>."
+    L["spit_target"] = "You spit on the ground."
 
     L["stare"] = "You stare off into the distance."
     L["stare_target"] = "You stare <Target> down."
@@ -598,10 +598,13 @@ function addon:LoadTranslations(AL)
     L["whine_target"] = "You whine pathetically at <Target>."
 
     L["whistle"] = "You let forth a sharp whistle."
-    L["whistle_target"] = "You whistle at <Target>."
-    
+    L["whistle_target"] = "You let forth a sharp whistle."
+
     L["whoa"] = "You are blown away."
     L["whoa_target"] = "You are blown away by <Target>."
+
+    L["wince"] = "You wince sympathetically."
+    L["wince_target"] = "You wince sympathetically at <Target>. That looked like it hurt!"
 
     L["wink"] = "You wink slyly."
     L["wink_target"] = "You wink slyly at <Target>."
@@ -716,7 +719,7 @@ function addon:LoadTranslations(AL)
     L["beg_target"] = "Ihr fleht <Target> an. Wie erb\195\164rmlich."
 
     L["belch"] = "Ihr R\195\188lpst laut."
-    L["belch_target"] = "Ihr R\195\188lpst <Target> geradewegs ins Gesicht."
+    L["belch_target"] = "Ihr R\195\188lpst laut."
 
     L["bite"] = "Ihr seht euch um ob es jemanden zum Beissen gibt."
     L["bite_target"] = "Ihr Beisst <Target>. Autsch!"
@@ -735,9 +738,9 @@ function addon:LoadTranslations(AL)
 
     L["bonk"] = "Ihr haut euch selbst kr\195\164ftig auf den Sch\195\164del.Autsch!"
     L["bonk_target"] = "Ihr haut <Target> kr\195\164ftig auf den Sch\195\164del. Autsch!"
-        
-        L["boop"] = "Du ber\195\188hrst deine eigene Nase. Boop!"
-        L["boop_target"] = "Du ber\195\188hrst <Target> Nase."
+
+    L["boop"] = "Du ber\195\188hrst deine eigene Nase. Boop!"
+    L["boop_target"] = "Du ber\195\188hrst <Target> Nase."
 
     L["bored"] = "Ihr sterbt fast vor Langeweile. Das Leben ist ja so hart!!"
     L["bored_target"] = "Ihr seid schrecklich gelangweilt von <Target>."
@@ -791,7 +794,7 @@ function addon:LoadTranslations(AL)
     L["congrats_target"] = "Ihr gratuliert <Target>."
 
     L["cough"] = "Ihr brecht in lautes Husten aus."
-    L["cough_target"] = "Ihr hustet <Target> an."
+    L["cough_target"] = "Ihr brecht in lautes Husten aus."
 
     L["cower"] = "Ihr kr\195\188mmt Euch ver\195\164ngstigt zusammen."
     L["cower_target"] = "Ihr kr\195\188mmt Euch beim Anblick von <Target> ver\195\164ngstigt zusammen."
@@ -827,7 +830,7 @@ function addon:LoadTranslations(AL)
     L["drink_target"] = "Ihr erhebt Euer Glas auf <Target>. Prost!"
 
     L["drool"] = "Ein Sabberfaden l\195\164uft Euch aus dem Mund."
-    L["drool_target"] = "Ihr seht <Target> an und fangt an zu sabbern."
+    L["drool_target"] = "Ein Sabberfaden l\195\164uft Euch aus dem Mund."
 
     L["duck"] = "Ihr duckt Euch zum Schutz."
     L["duck_target"] = "Ihr duckt Euch hinter <Target>."
@@ -845,7 +848,7 @@ function addon:LoadTranslations(AL)
     L["facepalm_target"] = "Ihr seht <Target> an und schlagt die H\195\164nde vors Gesicht."
 
     L["fart"] = "Ihr lasst einen lauten Furz entweichen. Igitt, was stinkt hier nur so?"
-    L["fart_target"] = "Ihr stellt Euch neben <Target> und lasst einen lauten Furz entweichen."
+    L["fart_target"] = "Ihr lasst einen lauten Furz entweichen. Igitt, was stinkt hier nur so?"
 
     L["fidget"] = "Ihr zappelt herum."
     L["fidget_target"] = "Ihr zappelt beim Warten auf <Target> nerv\195\182s herum."
@@ -934,6 +937,12 @@ function addon:LoadTranslations(AL)
     L["hungry"] = "Ihr habt Hunger!"
     L["hungry_target"] = "Ihr habt Hunger. Vielleicht hat <Target> ja etwas zu essen..."
 
+    L["huzzah"] = "Ihr jubeln ausgelassen! Huzzah!"
+    L["huzzah_target"] = "Ihr jubeln <Target> ausgelassen zu! Huzzah!"
+
+    L["impressed"] = "Du klatschst kr\195\164ftig, sichtlich beeindruckt."
+    L["impressed_target"] = "Du klatschst kr\195\164ftig f\195\188r <Target>, sichtlich beeindruckt."
+
     L["incoming"] = "Ihr warnt alle vor sich n\195\164hernden Feinden!"
     L["incoming_target"] = "Ihr zeigt auf <Target> - Feind n\195\164hert sich!"
 
@@ -973,14 +982,14 @@ function addon:LoadTranslations(AL)
     L["love"] = "Ihr sp\195\188rt die Liebe."
     L["love_target"] = "Ihr liebt <Target>."
 
+    L["magnificent"] = "Du nickst zustimmend. Gro\195\159artige Arbeit!"
+    L["magnificent_target"] = "Du nickst <Target> zustimmend zu. Gro\195\159artige Arbeit!"
+
     L["massage"] = "Ihr braucht eine Massage!"
     L["massage_target"] = "Ihr massiert die Schultern von <Target>."
     
     L["meow"] = "Ihr miaust."
     L["meow_target"] = "Ihr miaust bei <Target>."
-
-    L["moan"] = "Ihr st\195\182hnt vielsagend."
-    L["moan_target"] = "Ihr st\195\182hnt <Target> vielsagend an."
 
     L["mock"] = "Ihr macht Euch \195\188ber das Leben und alles, wof\195\188r es steht, lustig."
     L["mock_target"] = "Ihr macht Euch \195\188ber die Dummheit von <Target> lustig."
@@ -989,7 +998,7 @@ function addon:LoadTranslations(AL)
     L["moo_target"] = "<Target> wird von Euch angemuht. Muuuuh!"
 
     L["moon"] = "Ihr lasst die Hose runter und zeigt allen das blanke Hinterteil."
-    L["moon_target"] = "Ihr lasst die Hose runter und zeigt <Target> das blanke Hinterteil."
+    L["moon_target"] = "Ihr lasst die Hose runter und zeigt allen das blanke Hinterteil."
 
     L["mourn"] = "In stillem Nachdenken versunken betrauert Ihr die Toten."
     L["mourn_target"] = "In stillem Nachdenken versunken betrauert Ihr den Tod von <Target>."
@@ -1056,9 +1065,6 @@ function addon:LoadTranslations(AL)
 
     L["ready"] = "Ihr teilt allen mit dass Ihr bereit seid!"
     L["ready_target"] = "Ihr teilt <Target> mit dass Ihr bereit seid!"
-
-    L["rear"] = "Ihr wackelt mit Eurem Hintern."
-    L["rear_target"] = "Ihr zeigt <Target> Euren Hintern."
     
     L["regret"] = "Ihr bist voller Bedauern."
     L["regret_target"] = "Ihr denkst, dass <Target> es bereuen wird."
@@ -1114,9 +1120,6 @@ function addon:LoadTranslations(AL)
     L["sleep"] = "Ihr schlaft ein. Zzzzzzz."
     L["sleep_target"] = "Ihr schlaft ein. Zzzzzzz."
 
-    L["smell"] = "Ihr riecht die Luft um Euch herum. Igitt, hier stinkt jemand!"
-    L["smell_target"] = "Ihr riecht an <Target>. Igitt, hier stinkt jemand!"
-
     L["smile"] = "Ihr l\195\164chelt."
     L["smile_target"] = "Ihr l\195\164chelt <Target> an."
 
@@ -1139,7 +1142,7 @@ function addon:LoadTranslations(AL)
     L["soothe_target"] = "Ihr bes\195\164nftigt <Target>. Keine Panik ... alles wird wieder gut...."
 
     L["spit"] = "Ihr spuckt auf den Boden."
-    L["spit_target"] = "Ihr spuckt auf <Target>."
+    L["spit_target"] = "Ihr spuckt auf den Boden."
 
     L["stare"] = "Ihr starrt in die Ferne."
     L["stare_target"] = "Ihr starrt <Target> begierig an."
@@ -1202,10 +1205,13 @@ function addon:LoadTranslations(AL)
     L["whine_target"] = "Ihr heult <Target> herzzerrei\195\159end an."
 
     L["whistle"] = "Ihr lasst ein lautes Pfeifen h\195\182ren."
-    L["whistle_target"] = "Ihr pfeift <Target> zu."
-    
+    L["whistle_target"] = "Ihr lasst ein lautes Pfeifen h\195\182ren."
+
     L["whoa"] = "Ihr bist hin und weg."
     L["whoa_target"] = "Ihr bist \195\188berw\195\164ltigt von <Target>."
+
+    L["wince"] = "Du zuckt mitf\195\188hlend zusammen."
+    L["wince_target"] = "Du zuckt mitleidig bei <Target> zusammen. Das sah aus, als ob es weh tat!"
 
     L["wink"] = "Ihr zwinkert verschmitzt."
     L["wink_target"] = "Ihr zwinkert <Target> verschmitzt zu."
@@ -1295,7 +1301,7 @@ function addon:LoadTranslations(AL)
     L["beg_target"] = "Вы с мольбой смотрите на <Target>. Выглядит жалко."
     
     L["belch"] = "Вы громко рыгаете."
-    L["belch_target"] = "Вы грубо рыгаете в лицо <Target>. "
+    L["belch_target"] = "Вы громко рыгаете."
     
     L["bio"] = "нуждается в перерыве для естественных надобностей."
     L["bio_target"] = "говорит <Target>, что <he> нуждается в перерыве для естественных надобностей."
@@ -1320,9 +1326,9 @@ function addon:LoadTranslations(AL)
 
     L["bonk"] = "Вы стукаетесь головой. Буммм!"
     L["bonk_target"] = "Вы бьете <Target> по голове. Буммм!"
-        
-        L["boop"] = "Ты сам себе нос портишь. Буп!"
-        L["boop_target"] = "Ты Буп <Target> нос."
+
+    L["boop"] = "Ты сам себе нос портишь. Буп!"
+    L["boop_target"] = "Ты Буп <Target> нос."
 
     L["bored"] = "Вы изнываете от скуки. Какое занудство!"
     L["bored_target"] = "Общение с <Target> вас основательно утомило."
@@ -1376,7 +1382,7 @@ function addon:LoadTranslations(AL)
     L["congrats_target"] = "Вы поздравляете <Target>."
 
     L["cough"] = "Вы отрывисто кашляете."
-    L["cough_target"] = "Вы кашляете, привлекая внимание <Target>."
+    L["cough_target"] = "Вы отрывисто кашляете."
 
     L["cower"] = "Вы дрожите от страха."
     L["cower_target"] = "Вы дрожите от страха при виде <Target>."
@@ -1412,7 +1418,7 @@ function addon:LoadTranslations(AL)
     L["drink_target"] = "Вы пьете за <Target>. Ваше здоровье!"
 
     L["drool"] = "С ваших губ стекает струйка слюны."
-    L["drool_target"] = "Вы млеете, глядя на <Target>."
+    L["drool_target"] = "С ваших губ стекает струйка слюны."
 
     L["duck"] = "Вы ищете укрытие."
     L["duck_target"] = "Вы прячетесь за спину <Target>."
@@ -1433,7 +1439,7 @@ function addon:LoadTranslations(AL)
     L["facepalm_target"] = "Вы смотрите на <Target> и прячете лицо в ладонях."
 
     L["fart"] = "Вы испускаете газы. Фууу...чем это воняет?"
-    L["fart_target"] = "Вы третесь об <Target> и громко испускаете газы."
+    L["fart_target"] = "Вы испускаете газы. Фууу...чем это воняет?"
 
     L["fidget"] = "Вы нервничаете."
     L["fidget_target"] = "Вы нервничаете, ожидая <Target>."
@@ -1522,6 +1528,12 @@ function addon:LoadTranslations(AL)
     L["hungry"] = "Вы голодны!"
     L["hungry_target"] = "Вы голодны. Возможно, у <Target> есть что-нибудь поесть..."
 
+    L["huzzah"] = "Вы бурно веселитесь! Ура!"
+    L["huzzah_target"] = "Вы бурно болеете за <Target>! Ура!"
+
+    L["impressed"] = "Вы энергично хлопаете, явно впечатленные."
+    L["impressed_target"] = "Вы энергично хлопаете в ладоши <Target>, явно впечатлены."
+
     L["incoming"] = "Вы кричите, что враги идут!"
     L["incoming_target"] = "Вы указываете на <Target> как на врага!"
 
@@ -1561,14 +1573,14 @@ function addon:LoadTranslations(AL)
     L["love"] = "Вы чувствуете любовь."
     L["love_target"] = "Вы любите <Target>."
 
+    L["magnificent"] = "Вы одобрительно киваете. Великолепная работа!"
+    L["magnificent_target"] = "Вы одобрительно киваете <Target>. Великолепная работа!"
+
     L["massage"] = "Вам нужен массаж!"
     L["massage_target"] = "Вы массируете плечи <Target>."
 
     L["meow"] = "Вы мяукаете."
     L["meow_target"] = "Вы мяукаете <Target>."
-    
-    L["moan"] = "Вы призывно стонете."
-    L["moan_target"] = "Вы призывно стонете перед <Target>."
 
     L["mock"] = "Вы высмеиваете жизнь и все, что с ней связано."
     L["mock_target"] = "Вы смеетесь над глупостью <Target>."
@@ -1577,7 +1589,7 @@ function addon:LoadTranslations(AL)
     L["moo_target"] = "Вы мычите на <Target>. Mуууууууууу."
 
     L["moon"] = "Вы снимаете штаны и показываете всем зад."
-    L["moon_target"] = "Вы снимаете штаны и показываете зад <Target>."
+    L["moon_target"] = "Вы снимаете штаны и показываете всем зад."
 
     L["mourn"] = "В глубоком молчании вы скорбите о павших."
     L["mourn_target"] = "В глубоком молчании вы скорбите о гибели <Target>."
@@ -1645,9 +1657,6 @@ function addon:LoadTranslations(AL)
     L["ready"] = "Вы показываете всем, что готовы!"
     L["ready_target"] = "Вы показываете <Target>, что вы готовы!"
 
-    L["rear"] = "Вы вертите задом."
-    L["rear_target"] = "Вы вертите задом перед <Target>."
-
     L["regret"] = "Вас переполняет сожаление."
     L["regret_target"] = "Вы уверены, что <Target> пожалеет об этом."   
     
@@ -1702,9 +1711,6 @@ function addon:LoadTranslations(AL)
     L["sleep"] = "Вы засыпаете. Хррррр..."
     L["sleep_target"] = "Вы засыпаете. Хррррр..."
 
-    L["smell"] = "Вы нюхаете воздух. Кем это воняет?"
-    L["smell_target"] = "Вы обнюхиваете <Target>. Ууу, чем это воняет?!"
-
     L["smile"] = "Вы улыбаетесь."
     L["smile_target"] = "Вы улыбаетесь <Target>."
 
@@ -1727,7 +1733,7 @@ function addon:LoadTranslations(AL)
     L["soothe_target"] = "Вы утешаете <Target>. Ну-ну, все будет хорошо..."
 
     L["spit"] = "Вы плюете на землю."
-    L["spit_target"] = "Вы плюёте в <Target>."
+    L["spit_target"] = "Вы плюете на землю."
 
     L["stare"] = "Вы пристально смотрите вдаль."
     L["stare_target"] = "Вы меряете взглядом <Target>."
@@ -1790,11 +1796,14 @@ function addon:LoadTranslations(AL)
     L["whine_target"] = "Вы жалобно скулите перед <Target>."
 
     L["whistle"] = "Вы пронзительно свистите."
-    L["whistle_target"] = "Вы свистите <Target>."
+    L["whistle_target"] = "Вы пронзительно свистите."
 
     L["whoa"] = "Вы просто в шоке."
     L["whoa_target"] = "Вы в шоке от <Target>."   
-    
+
+    L["wince"] = "Вы сочувственно вздрагиваете."
+    L["wince_target"] = "Вы сочувственно вздрагиваете, глядя на <Target>. Похоже, было больно!"
+
     L["wink"] = "Вы хитро подмигиваете."
     L["wink_target"] = "Вы хитро подмигиваете <Target>."
 

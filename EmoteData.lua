@@ -198,13 +198,13 @@ EL_Emotes = {
     ["react"] = 0,
     ["custom"] = {0},
   },
-    ["boop"] = {
-        ["types"] = {1,3,4,8,9},
-        ["none"] = L["boop"],
-        ["target"] = L["boop_target"],
-        ["react"] = 1,
-        ["custom"] = {0},
-    },
+  ["boop"] = {
+    ["types"] = {1,3,4,8,9},
+    ["none"] = L["boop"],
+    ["target"] = L["boop_target"],
+    ["react"] = 1,
+    ["custom"] = {0},
+  },
   ["bored"] = {
     ["types"] = {5},
     ["none"] = L["bored"],
@@ -660,6 +660,20 @@ EL_Emotes = {
     ["react"] = 0,
     ["custom"] = {0},
   },
+  ["huzzah"] = {
+    ["types"] = {1, 8, 12},
+    ["none"] = L["huzzah"],
+    ["target"] = L["huzzah_target"],
+    ["react"] = 1,
+    ["custom"] = {0},
+  },
+  ["impressed"] = {
+    ["types"] = {1, 8, 12},
+    ["none"] = L["impressed"],
+    ["target"] = L["impressed_target"],
+    ["react"] = 3,
+    ["custom"] = {0},
+  },
   ["incoming"] = {
     ["types"] = {10},
     ["none"] = L["incoming"],
@@ -751,6 +765,13 @@ EL_Emotes = {
     ["react"] = 0,
     ["custom"] = {0},
   },
+  ["magnificent"] = {
+    ["types"] = {1, 8, 12},
+    ["none"] = L["magnificent"],
+    ["target"] = L["magnificent_target"],
+    ["react"] = 1,
+    ["custom"] = {0},
+  },
   ["massage"] = {
     ["types"] = {8},
     ["none"] = L["massage"],
@@ -762,13 +783,6 @@ EL_Emotes = {
     ["types"] = {1,3,8,9},
     ["none"] = L["meow"],
     ["target"] = L["meow_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["moan"] = {
-    ["types"] = {8},
-    ["none"] = L["moan"],
-    ["target"] = L["moan_target"],
     ["react"] = 0,
     ["custom"] = {0},
   },
@@ -947,13 +961,6 @@ EL_Emotes = {
     ["react"] = 0,
     ["custom"] = {0},
   },
-  ["rear"] = {
-    ["types"] = {7},
-    ["none"] = L["rear"],
-    ["target"] = L["rear_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
   ["regret"] = {
     ["types"] = {2,5,7,10,12},
     ["none"] = L["regret"],
@@ -1078,13 +1085,6 @@ EL_Emotes = {
     ["none"] = L["sleep"],
     ["target"] = L["sleep_target"],
     ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["smell"] = {
-    ["types"] = {7},
-    ["none"] = L["smell"],
-    ["target"] = L["smell_target"],
-    ["react"] = 0,
     ["custom"] = {0},
   },
   ["smile"] = {
@@ -1295,6 +1295,13 @@ EL_Emotes = {
     ["none"] = L["whoa"],
     ["target"] = L["whoa_target"],
     ["react"] = 3,
+    ["custom"] = {0},
+  },
+  ["wince"] = {
+    ["types"] = {4, 12},
+    ["none"] = L["wince"],
+    ["target"] = L["wince_target"],
+    ["react"] = 0,
     ["custom"] = {0},
   },
   ["wink"] = {
