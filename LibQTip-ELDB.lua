@@ -539,6 +539,7 @@ function InitializeTooltip(tooltip, key)
   ----------------------------------------------------------------------
   -- (Re)set frame settings
   ----------------------------------------------------------------------
+  Mixin(GameTooltip, BackdropTemplateMixin)
   local backdrop = GameTooltip:GetBackdrop()
 
   tooltip:SetBackdrop(backdrop)
