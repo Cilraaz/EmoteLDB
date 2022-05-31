@@ -1,4 +1,4 @@
--- EmoteLDB by Cilraaz/Allisu of Rexxar-US
+-- EmoteLDB by Cilraaz of Aerie Peak US
 
 -- Basic addon info
 local addonName, addon = ...
@@ -25,7 +25,7 @@ local string = _G.string
 local pairs = _G.pairs
 local gsub = string.gsub
 
-local emoteVer = "9.2.0.01"
+local emoteVer = "9.2.5.01"
 
 -- Debug setting
 addon.debug = false
