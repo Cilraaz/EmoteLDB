@@ -25,7 +25,7 @@ local string = _G.string
 local pairs = _G.pairs
 local gsub = string.gsub
 
-local emoteVer = "9.2.7.01"
+local emoteVer = "10.0.0.01"
 
 -- Debug setting
 addon.debug = false
@@ -373,7 +373,7 @@ function EmoteLDB:BuildTooltip(key, info)
   -- Make a larger header
   local headerFont = CreateFont("EmoteLDBHeaderFont")
   EmoteLDBHeaderFont:CopyFontObject(GameTooltipHeaderText)
-  EmoteLDBHeaderFont:SetFont(EmoteLDBHeaderFont:GetFont(), 15)
+  EmoteLDBHeaderFont:SetFont(EmoteLDBHeaderFont:GetFont(), 15, "OUTLINE, MONOCHROME")
   
   -- Create the tooltip background
   ELDBTip:SetBackdrop(tipcfg)
