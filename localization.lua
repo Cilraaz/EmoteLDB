@@ -447,6 +447,9 @@ function addon:LoadTranslations(AL)
     L["puzzled"] = "You are puzzled. What's going on here?"
     L["puzzled_target"] = "You are puzzled by <Target>."
 
+    L["quack"] = "You pretend to be a duck. Quack!"
+    L["quack_target"] = "You quack at <Target>. Quack!"
+
     L["question"] = "You want to know the meaning of life."
     L["question_target"] = "You question <Target>."
 
@@ -533,9 +536,6 @@ function addon:LoadTranslations(AL)
 
     L["soothe"] = "You need to be soothed."
     L["soothe_target"] = "You soothe <Target>. There, there...things will be ok."
-
-    L["spit"] = "You spit on the ground."
-    L["spit_target"] = "You spit on the ground."
 
     L["stare"] = "You stare off into the distance."
     L["stare_target"] = "You stare <Target> down."
@@ -1054,6 +1054,9 @@ function addon:LoadTranslations(AL)
     L["puzzled"] = "Ihr seid verwirrt. Was ist denn hier nur los?"
     L["puzzled_target"] = "<Target> verwirrt Euch."
 
+    L["quack"] = "Ihr tust so, als wärst Ihr eine Ente. Quacksalber!"
+    L["quack_target"] = "Ihr quakt <Target> an. Quacksalber!"
+
     L["question"] = "Ihr wollt wissen was der Sinn des Lebens ist."
     L["question_target"] = "Ihr befragt <Target>."
 
@@ -1140,9 +1143,6 @@ function addon:LoadTranslations(AL)
 
     L["soothe"] = "Ihr m\195\188sst bes\195\164nftigt werden."
     L["soothe_target"] = "Ihr bes\195\164nftigt <Target>. Keine Panik ... alles wird wieder gut...."
-
-    L["spit"] = "Ihr spuckt auf den Boden."
-    L["spit_target"] = "Ihr spuckt auf den Boden."
 
     L["stare"] = "Ihr starrt in die Ferne."
     L["stare_target"] = "Ihr starrt <Target> begierig an."
@@ -1645,6 +1645,9 @@ function addon:LoadTranslations(AL)
     L["puzzled"] = "Вы озадачены. Что тут происходит?"
     L["puzzled_target"] = "Вы озадачены поведением <Target>."
 
+    L["quack"] = "Вы притворяешься уткой. Кряк!"
+    L["quack_target"] = "Вы крякаете на <Target>. кря!"
+
     L["question"] = "Вы хотите познать смысл жизни."
     L["question_target"] = "Вы спрашиваете <Target>."
 
@@ -1731,9 +1734,6 @@ function addon:LoadTranslations(AL)
 
     L["soothe"] = "Вам нужно утешение."
     L["soothe_target"] = "Вы утешаете <Target>. Ну-ну, все будет хорошо..."
-
-    L["spit"] = "Вы плюете на землю."
-    L["spit_target"] = "Вы плюете на землю."
 
     L["stare"] = "Вы пристально смотрите вдаль."
     L["stare_target"] = "Вы меряете взглядом <Target>."

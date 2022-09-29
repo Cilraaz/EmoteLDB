@@ -933,6 +933,13 @@ EL_Emotes = {
     ["react"] = 1,
     ["custom"] = {0},
   },
+  ["quack"] = {
+    ["types"] = {4,7,8,9,12},
+    ["none"] = L["quack"],
+    ["target"] = L["quack_target"],
+    ["react"] = 1,
+    ["custom"] = {0},
+  },
   ["question"] = {
     ["types"] = {13},
     ["none"] = L["question"],
@@ -1133,13 +1140,6 @@ EL_Emotes = {
     ["types"] = {8},
     ["none"] = L["soothe"],
     ["target"] = L["soothe_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["spit"] = {
-    ["types"] = {7},
-    ["none"] = L["spit"],
-    ["target"] = L["spit_target"],
     ["react"] = 0,
     ["custom"] = {0},
   },
