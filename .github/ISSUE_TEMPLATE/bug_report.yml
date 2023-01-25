@@ -3,10 +3,6 @@ description: Submit a bug report
 title: "[Bug]: "
 labels: "Bug"
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ##Please change "Bug" in the title to the Class/Specialization experiencing the issue.
   - type: input
     id: version
     attributes:
