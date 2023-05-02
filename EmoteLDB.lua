@@ -6,24 +6,25 @@ local addonName, addon = ...
 EmoteLDB = LibStub("AceAddon-3.0"):NewAddon("EmoteLDB")
 
 -- Initialize localization
-local L = nil
+local L  = nil
 local AL = LibStub:GetLibrary("AceLocale-3.0", true)
 if AL then
   if type(addon.LoadTranslations) == "function" then
     addon:LoadTranslations(AL)
     addon.LoadTranslations = nil
   end
-  L = AL:GetLocale(addonName)
+  L  = AL:GetLocale(addonName)
   AL = nil
 else
-  L = setmetatable({}, {__index = function(t,k) t[k] = k return k end })
+  L  = setmetatable({}, {__index = function(t,k) t[k] = k return k end })
 end
 addon.L = L
 
 -- Set up environment variables
-local string = _G.string
-local pairs = _G.pairs
-local gsub = string.gsub
+local string           = _G.string
+local pairs            = _G.pairs
+local GetAddOnMetadata = C_AddOns.GetAddOnMetadata
+local gsub             = string.gsub
 
 local emoteVer = GetAddOnMetadata("EmoteLDB", "Version")
 
@@ -32,8 +33,8 @@ addon.debug = false
 
 -- Declare Libs
 local self = EmoteLDB
-local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
-local QTC = LibStub('LibQTipELDB-1.0')
+local ldb  = LibStub:GetLibrary("LibDataBroker-1.1")
+local QTC  = LibStub('LibQTipELDB-1.0')
 local icon = LibStub("LibDBIcon-1.0")
 
 -- Variables for tooltip and Data Object
@@ -51,10 +52,10 @@ local tipcfg = {
 }
 
 -- Variables/Tables for emote compilation/output
-local info = nil
-local key = nil
-local infoArray = {}
-local keyArray = {}
+local info       = nil
+local key        = nil
+local infoArray  = {}
+local keyArray   = {}
 local emoteTable = {}
 
 -- DB Defaults
