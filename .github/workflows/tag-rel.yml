@@ -24,7 +24,7 @@ jobs:
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
-          filename: EmoteLDB-${{ env.tag }}.zip
+          filename: EmoteLDB-${{ steps.vars.outputs.tag }}.zip
           exclusions: '*.git* *.pkgmeta *.svn*'
       # Create a release on GitHub
       - name: Create Release
