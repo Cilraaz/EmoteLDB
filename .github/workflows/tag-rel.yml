@@ -52,4 +52,4 @@ jobs:
       - name: Package and Release to Wago
         uses: BigWigsMods/packager@master
         with:
-            args: -a JZKbwkG1
+            args: -a JZKbwkG1 -n "${{ env.tag }}"
