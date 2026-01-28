@@ -1,534 +1,490 @@
 -- EmoteLDB by Cilraaz of Aerie Peak US
+local addonName, EmoteLDB = ...
 
--- Basic addon info
-local addonName, addon = ...
+-- Create the addon object using Ace3
+LibStub("AceAddon-3.0"):NewAddon(EmoteLDB, addonName, "AceEvent-3.0")
+_G.EmoteLDB = EmoteLDB
 
-EmoteLDB = LibStub("AceAddon-3.0"):NewAddon("EmoteLDB")
+-- Local references to globals for performance
+local string = string
+local pairs = pairs
+local ipairs = ipairs
+local format = string.format
+local gsub = string.gsub
+local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
 
--- Initialize localization
-local L  = nil
-local AL = LibStub:GetLibrary("AceLocale-3.0", true)
-if AL then
-  if type(addon.LoadTranslations) == "function" then
-    addon:LoadTranslations(AL)
-    addon.LoadTranslations = nil
-  end
-  L  = AL:GetLocale(addonName)
-  AL = nil
-else
-  L  = setmetatable({}, {__index = function(t,k) t[k] = k return k end })
-end
-addon.L = L
+--------------------------------------------------------------------------------
+-- Constants
+--------------------------------------------------------------------------------
+local ADDON_VERSION = GetAddOnMetadata("EmoteLDB", "Version") or "Unknown"
 
--- Set up environment variables
-local string           = _G.string
-local pairs            = _G.pairs
-local GetAddOnMetadata = C_AddOns.GetAddOnMetadata
-local gsub             = string.gsub
-
-local emoteVer = GetAddOnMetadata("EmoteLDB", "Version")
-
--- Debug setting
-addon.debug = false
-
--- Declare Libs
-local self = EmoteLDB
-local ldb  = LibStub:GetLibrary("LibDataBroker-1.1")
-local QTC  = LibStub('LibQTipELDB-1.0')
-local icon = LibStub("LibDBIcon-1.0")
-
--- Variables for tooltip and Data Object
-local ELDBTip
-local options
-local EmoteLDBObj
-local tipcfg = {
-  bgFile = "Interface/Tooltips/UI-Tooltip-Background-Azerite",
-  edgeFile = "Interface/Tooltips/UI-Tooltip-Border-Azerite",
-  tile = false,
-  tileEdge = false,
-  tileSize = 16,
-  edgeSize = 16,
-  insets = {left=3, right=3, top=3, bottom=3}
+local COLOR_CODES = {
+	none = "fffefefe",
+	action = "ff9482c9",
+	vocal = "ffff8000",
+	av = "ff1eff00",
+	error = "ff9d9d9d",
+	green = "0000FF00",
+	red = "00FF0000",
+	purple = "00FF00FF"
 }
 
--- Variables/Tables for emote compilation/output
-local info       = nil
-local key        = nil
-local infoArray  = {}
-local keyArray   = {}
-local emoteTable = {}
+local EMOTE_REACTION_TYPES = {
+	NONE = 0,
+	ACTION = 1,
+	VOCAL = 2,
+	AV = 3
+}
 
--- DB Defaults
+-- Largest category size for tooltip padding
+local MAX_CATEGORY_SIZE = 30
+
+--------------------------------------------------------------------------------
+-- Debug Setting
+--------------------------------------------------------------------------------
+EmoteLDB.debug = false
+
+--------------------------------------------------------------------------------
+-- Database Defaults
+--------------------------------------------------------------------------------
 local defaults = {
-  profile = {
-    showSlashCommand = true,
-    hideDetails = true
-  },
-  global = {
-    LibDBIcon = { hide = false }
-  }
+	profile = {
+		showSlashCommand = true,
+		hideDetails = true
+	},
+	global = {
+		LibDBIcon = {hide = false}
+	}
 }
 
--- Create and colorize text for emote list
-function EmoteLDB:GetOnDemandText(v,hasTarget)
-  local color
-  local flag = nil
-  local returnCode
-  local emoteText
-  local firstType = EL_Types[v["types"][1]]
+--------------------------------------------------------------------------------
+-- Localization Setup
+--------------------------------------------------------------------------------
+EmoteLDB.L = EmoteLDB.L or {}
+local L = EmoteLDB.L
 
-  if (hasTarget) then emoteText = v.target else emoteText = v.none end
-  
-  if (firstType == "Custom") then
-    emoteText = UnitName("player").." "..emoteText
-  end
-
-  if (EL_React[v.react] == "") then -- None
-    color = "fffefefe"
-  elseif (EL_React[v.react] == "Action") then -- Animated, Purple
-    color = "ff9482c9"
-    flag = L["Action"]
-  elseif (EL_React[v.react] == "Vocal") then -- Voice, Orange
-    color = "ffff8000"
-    flag = L["Vocal"]
-  elseif (EL_React[v.react] == "AV") then -- Both, Green
-    color = "ff1eff00"
-    flag = L["AV"]
-  else -- Shouldn't happen, Grey
-    color = "ff9d9d9d"
-  end
-
-  returnCode = "|c" .. color .. emoteText .. FONT_COLOR_CODE_CLOSE
-  if (flag) then returnCode = returnCode.." ["..flag.."]" end
-  return returnCode
+if not getmetatable(L) then
+	setmetatable(L, {
+		__index = function(t, key)
+			-- Only show warnings if debug mode is enabled
+			if EmoteLDB.debug then
+				print(string.format("|cFFFF0000EmoteLDB Warning:|r Missing translation: %s", tostring(key)))
+			end
+			-- Cache and return the key as fallback
+			rawset(t, key, key)
+			return key
+		end
+	})
 end
 
--- Handles clicking of the object itself (minimap icon, rather than within tooltip)
-function HandleModClick(_, k)
-  -- Handle a return to category list click
-  if (k and k == "catList") then
-    ELDBTip:Clear()
-    key = nil
-    keyArray = {}
-    info = nil
-    infoArray = {}
-    emoteTable = {}
-    -- Call the method to build the tooltip
-    EmoteLDB:BuildTooltip(key, info)
-    -- Actually display the tooltip
-    ELDBTip:Show()
-  end
+--------------------------------------------------------------------------------
+-- Lib References
+--------------------------------------------------------------------------------
+local LibDataBroker = LibStub:GetLibrary("LibDataBroker-1.1")
+local LibDBIcon = LibStub("LibDBIcon-1.0")
 
-  -- Handle an emote click
-  if (k and k ~= "catList") then
-    -- Custom emote
-    local firstType = EL_Types[EL_Emotes[k]["types"][1]]
-    if (firstType == "Custom") then
-      local emoteText
-      local hasTarget = UnitName("target")
-      local genderCode = UnitSex("player")
-      local genderHe = nil
-      local genderHis = nil
-      local genderhe = nil
-      local genderhis = nil
-      if (genderCode == 2) then -- male
-        genderHe = L["He"]
-        genderHis = L["His"]
-        genderhe = L["he"]
-        genderhis = L["his"]
-      else -- female (we hope)
-        genderHe = L["She"]
-        genderHis = L["Her"]
-        genderhe = L["she"]
-        genderhis = L["her"]
-      end
+--------------------------------------------------------------------------------
+-- Custom Tooltip
+--------------------------------------------------------------------------------
+local tooltip = EmoteLDB.Tooltip
 
-      if (hasTarget) then
-        emoteText = EL_Emotes[k].target
-        emoteText = gsub(emoteText,"<Target>",hasTarget)
-      else
-        emoteText = EL_Emotes[k].none
-      end
-      
-      emoteText = gsub(emoteText,"<He>",genderHe)
-      emoteText = gsub(emoteText,"<His>",genderHis)
-      emoteText = gsub(emoteText,"<he>",genderhe)
-      emoteText = gsub(emoteText,"<his>",genderhis)
+--------------------------------------------------------------------------------
+-- Module Variables
+--------------------------------------------------------------------------------
+local dataObject
 
-      EmoteLDBObj.text = "/"..k
-      SendChatMessage(emoteText,"EMOTE")
-      HideTooltip()
-    else
-      -- Alter token for emotes that share tokens, but can only be activated by one
-      emoteToken = string.upper(k)
-      if (emoteToken == "LAVISH") then
-        emoteToken = "PRAISE";
-      end
-      if (emoteToken == "EXCITED") then
-        emoteToken = "TALKEX";
-      end
-      if (emoteToken == "DOOM") then
-        emoteToken = "THREATEN";
-      end
-      if (emoteToken == "SILLY") then
-        emoteToken = "JOKE";
-      end
-      if (emoteToken == "LAY") then
-        emoteToken = "LAYDOWN";
-      end
-      if (emoteToken == "REAR") then
-        emoteToken = "SHAKE";
-      end
-      if (emoteToken == "BELCH") then
-        emoteToken = "BURP";
-      end
-      if (emoteToken == "SMELL") then
-        emoteToken = "STINK";
-      end
-      if (emoteToken == "GOODBYE") then
-        emoteToken = "BYE";
-      end
-      if (emoteToken == "FOLLOWME") then
-        emoteToken = "FOLLOW";
-      end
-      if (emoteToken == "ATTACKTARGET") then
-        emoteToken = "ATTACKMYTARGET";
-      end
-      if (emoteToken == "CONGRATS") then
-        emoteToken = "CONGRATULATE";
-      end
-      if (emoteToken == "PUZZLED") then
-        emoteToken = "PUZZLE";
-      end
-      if (emoteToken == "QUESTION") then
-        emoteToken = "TALKQ";
-      end
-      EmoteLDBObj.text = "/"..k
-      DoEmote(emoteToken);
-      HideTooltip()
-    end
-  end
+-- State management
+local currentCategory = nil
+local emotesByReaction = {}
+
+--------------------------------------------------------------------------------
+-- Utility Functions
+--------------------------------------------------------------------------------
+local function DebugPrint(message)
+	if EmoteLDB.debug then
+		DEFAULT_CHAT_FRAME:AddMessage("[EmoteLDB Debug] " .. tostring(message))
+	end
 end
 
--- Handle clicks within the tooltip
-function HandlerFunc(_, name, button, ...)
-  debugPrint("name = " .. name)
-  -- If we clicked option for showing slash command
-  if name == "showSlash" then
-    self.db.profile.showSlashCommand = not self.db.profile.showSlashCommand
-    EmoteLDB:BuildTooltip(nil, nil)
-  -- If we clicked option to toggle minimap icon
-  elseif name == "miniToggle" then
-    debugPrint(format("before hide = %s", self.db.global.LibDBIcon.hide and "true" or "false"))
-    self.db.global.LibDBIcon.hide = not self.db.global.LibDBIcon.hide
-    debugPrint(format("after hide = %s", self.db.global.LibDBIcon.hide and "true" or "false"))
-    if self.db.global.LibDBIcon.hide then
-      icon:Hide("EmoteLDB")
-    else
-      icon:Show("EmoteLDB")
-    end
-    EmoteLDB:BuildTooltip(nil, nil)
-  -- If we clicked an emote category
-  else
-    local hasTarget = UnitName("target")
-    local genderCode = UnitSex("player")
-    local genderHe = nil
-    local genderHis = nil
-    local genderhe = nil
-    local genderhis = nil
-    if (genderCode == 2) then -- male
-      genderHe = "He"
-      genderHis = "His"
-      genderhe = "he"
-      genderhis = "his"
-    else -- female (we hope)
-      genderHe = "She"
-      genderHis = "Her"
-      genderhe = "she"
-      genderhis = "her"
-    end
-    
-    -- Set up an empty emoteTable for sorting emotes by in-game effects
-    emoteTable[0] = {}
-    emoteTable[1] = {}
-    emoteTable[2] = {}
-    emoteTable[3] = {}
-    
-    -- Iterate EL_Emotes from EmoteData.lua
-    for k, v in pairs(EL_Emotes) do
-      for k2, v2 in pairs(v.types) do
-        if (name == v2) then
-          info = nil
-          if (hasTarget) then
-            info = EmoteLDB:GetOnDemandText(v,true)
-            info = gsub(info,"<Target>",hasTarget)
-          else
-            info = EmoteLDB:GetOnDemandText(v,false)
-          end
-
-          info = gsub(info,"<He>",genderHe)
-          info = gsub(info,"<His>",genderHis)
-          info = gsub(info,"<he>",genderhe)
-          info = gsub(info,"<his>",genderhis)
-
-          for k3, v3 in pairs(v.custom) do
-            if (v3 == 1) then
-              slshCmd = L["Custom:  "]
-            else
-              slshCmd = "/"..k..":  "
-            end
-          end
-          
-          -- Insert emote information into table, using reaction type as key
-          table.insert(emoteTable[v.react], { slshCmd, info, k })
-        end
-      end
-    end
-    local sort_func = function( a,b ) return a[3] < b[3] end
-    table.sort( emoteTable[0], sort_func )
-    table.sort( emoteTable[1], sort_func )
-    table.sort( emoteTable[2], sort_func )
-    table.sort( emoteTable[3], sort_func )
-    EmoteLDB:BuildTooltip(keyArray,infoArray)
-  end
+-- Get gender-appropriate pronouns for the player
+local function GetPlayerPronouns()
+	local gender = UnitSex("player")
+	
+	if gender == 2 then -- Male
+		return {
+			He = L["He"],
+			His = L["His"],
+			he = L["he"],
+			his = L["his"]
+		}
+	elseif gender == 3 then -- Female
+		return {
+			He = L["She"],
+			His = L["Her"],
+			he = L["she"],
+			his = L["her"]
+		}
+  else -- Unknown
+    return {
+      He = L["It"],
+      His = L["Its"],
+      he = L["it"],
+      his = L["its"]
+    }
+	end
 end
 
--- Create the Data Object
-EmoteLDBObj = ldb:NewDataObject("EmoteLDB", {
-  type = "data source",
-  icon = "Interface\\Icons\\Spell_Shadow_Charm",
-  label = "EmoteLDB",
-  text = L["Last Emote Used"],
-})
-  
--- Initialization
+-- Replace template tags in emote text
+local function ProcessEmoteText(text, targetName, pronouns)
+	if not text then return "" end
+	
+	-- Replace target
+	if targetName then
+		text = gsub(text, "<Target>", targetName)
+	end
+	
+	-- Replace pronouns
+	if pronouns then
+		text = gsub(text, "<He>", pronouns.He)
+		text = gsub(text, "<His>", pronouns.His)
+		text = gsub(text, "<he>", pronouns.he)
+		text = gsub(text, "<his>", pronouns.his)
+	end
+	
+	return text
+end
+
+-- Get colored emote text based on reaction type
+local function GetColoredEmoteText(emoteData, hasTarget)
+	if not emoteData then return "" end
+	
+	local emoteText = hasTarget and emoteData.target or emoteData.none
+	local firstType = EL_Types[emoteData.types[1]]
+	
+	-- Add player name for custom emotes
+	if firstType == L["Custom"] then
+		emoteText = UnitName("player") .. " " .. emoteText
+	end
+	
+	-- Determine color and flag based on reaction type
+	local color = COLOR_CODES.none
+	local flag = nil
+	local reactionType = EL_React[emoteData.react]
+	
+	if reactionType == L["Action"] then
+		color = COLOR_CODES.action
+		flag = L["Action"]
+	elseif reactionType == L["Vocal"] then
+		color = COLOR_CODES.vocal
+		flag = L["Vocal"]
+	elseif reactionType == L["AV"] then
+		color = COLOR_CODES.av
+		flag = L["AV"]
+	elseif reactionType ~= "" then
+		-- Unknown reaction type
+		color = COLOR_CODES.error
+	end
+	
+	local result = "|c" .. color .. emoteText .. FONT_COLOR_CODE_CLOSE
+	if flag then
+		result = result .. " [" .. flag .. "]"
+	end
+	
+	return result
+end
+
+-- Execute an emote command
+local function ExecuteEmote(emoteKey)
+	if not emoteKey or not EL_Emotes[emoteKey] then return end
+	
+	local emoteData = EL_Emotes[emoteKey]
+	local firstType = EL_Types[emoteData.types[1]]
+	
+	-- Handle custom emotes
+	if firstType == L["Custom"] then
+		local targetName = UnitName("target")
+		local pronouns = GetPlayerPronouns()
+		
+		local emoteText = targetName and emoteData.target or emoteData.none
+		emoteText = ProcessEmoteText(emoteText, targetName, pronouns)
+		
+		DoEmote(emoteText, "EMOTE")
+	else
+		-- Standard emote command
+		DoEmote(emoteKey)
+	end
+end
+
+-- Clear tooltip state
+local function ClearTooltipState()
+	currentCategory = nil
+	emotesByReaction = {
+		[EMOTE_REACTION_TYPES.NONE] = {},
+		[EMOTE_REACTION_TYPES.ACTION] = {},
+		[EMOTE_REACTION_TYPES.VOCAL] = {},
+		[EMOTE_REACTION_TYPES.AV] = {}
+	}
+end
+
+--------------------------------------------------------------------------------
+-- Tooltip Building
+--------------------------------------------------------------------------------
+-- Build category list for tooltip
+local function BuildCategoryList()
+	DebugPrint("Building category list")
+	
+	for categoryId, categoryName in ipairs(EL_Types) do
+		tooltip:AddLine(categoryName, "CENTER", nil, function()
+			EmoteLDB:OnCategoryClick(categoryId)
+		end)
+	end
+end
+
+-- Build emote list for selected category
+local function BuildEmoteList()
+	DebugPrint("Building emote list for category: " .. tostring(currentCategory))
+	
+	-- Add back button
+	tooltip:AddLine(L["Return to Category List"] or "Return to Category List", "CENTER", nil, function()
+		EmoteLDB:ReturnToCategoryList()
+	end)
+	tooltip:AddSpacer()
+	
+	-- Display emotes sorted by reaction type (AV -> Vocal -> Action -> None)
+	local emoteCount = 0
+	for i = EMOTE_REACTION_TYPES.AV, EMOTE_REACTION_TYPES.NONE, -1 do
+		for _, emoteInfo in ipairs(emotesByReaction[i]) do
+			local displayText = EmoteLDB.db.profile.showSlashCommand 
+				and (emoteInfo.command .. emoteInfo.text)
+				or emoteInfo.text
+			
+			tooltip:AddLine(displayText, "LEFT", nil, function()
+				ExecuteEmote(emoteInfo.key)
+			end)
+			
+			emoteCount = emoteCount + 1
+		end
+	end
+	
+	DebugPrint("Displayed " .. emoteCount .. " emotes")
+	
+	-- Add filler lines to prevent tooltip resizing
+	if emoteCount < MAX_CATEGORY_SIZE then
+		for i = 1, (MAX_CATEGORY_SIZE - emoteCount) do
+			tooltip:AddSpacer()
+		end
+	end
+end
+
+-- Build settings section for tooltip
+local function BuildSettingsSection()
+	tooltip:AddSpacer()
+	
+	-- Slash command toggle
+	tooltip:AddLine(L["Toggle the display of slash commands."], "CENTER", nil, function()
+		EmoteLDB:ToggleSlashCommands()
+	end)
+	
+	local slashStatus = EmoteLDB.db.profile.showSlashCommand 
+		and ("|c" .. COLOR_CODES.green .. "Shown|r")
+		or ("|c" .. COLOR_CODES.red .. "Hidden|r")
+	tooltip:AddLine((L["Currently: "] or "Currently: ") .. slashStatus, "LEFT")
+	tooltip:AddSpacer()
+	
+	-- Minimap icon toggle
+	tooltip:AddLine(L["Toggle the display of the minimap button"], "CENTER", nil, function()
+		EmoteLDB:ToggleMinimapIcon()
+	end)
+	
+	local iconStatus = EmoteLDB.db.global.LibDBIcon.hide 
+		and ("|c" .. COLOR_CODES.red .. "Hidden|r")
+		or ("|c" .. COLOR_CODES.green .. "Shown|r")
+	tooltip:AddLine((L["Currently: "] or "Currently: ") .. iconStatus, "LEFT")
+	tooltip:AddSpacer()
+	
+	-- Version display
+	local versionText = (L["EmoteLDB version: "] or "EmoteLDB version: ") .. "|c" .. COLOR_CODES.purple .. ADDON_VERSION .. "|r"
+	tooltip:AddLine(versionText, "LEFT")
+end
+
+-- Main tooltip builder
+function EmoteLDB:BuildTooltip()
+	if not tooltip then return end
+	
+	tooltip:ClearLines()
+	
+	-- Add header
+	tooltip:AddHeader("EmoteLDB")
+	tooltip:AddSpacer()
+	
+	-- Build content based on current state
+	if not currentCategory then
+		BuildCategoryList()
+		BuildSettingsSection()
+	else
+		BuildEmoteList()
+	end
+	
+	tooltip:Show()
+end
+
+--------------------------------------------------------------------------------
+-- Event Handlers
+--------------------------------------------------------------------------------
+function EmoteLDB:OnCategoryClick(categoryId)
+	DebugPrint("Category clicked: " .. categoryId)
+	
+	currentCategory = categoryId
+	
+	-- Clear and rebuild emote lists
+	for i = EMOTE_REACTION_TYPES.NONE, EMOTE_REACTION_TYPES.AV do
+		emotesByReaction[i] = {}
+	end
+	
+	local targetName = UnitName("target")
+	local pronouns = GetPlayerPronouns()
+	local categoryName = EL_Types[categoryId]
+	
+	-- Collect all emotes in this category
+	for emoteKey, emoteData in pairs(EL_Emotes) do
+		for _, typeId in pairs(emoteData.types) do
+			if typeId == categoryId then
+				local coloredText = GetColoredEmoteText(emoteData, targetName)
+				coloredText = ProcessEmoteText(coloredText, targetName, pronouns)
+				
+				local command
+				if emoteData.custom and emoteData.custom[1] == 1 then
+					command = L["Custom:  "]
+				else
+					command = "/" .. emoteKey .. ":  "
+				end
+				
+				local reactionType = emoteData.react or EMOTE_REACTION_TYPES.NONE
+				table.insert(emotesByReaction[reactionType], {
+					command = command,
+					text = coloredText,
+					key = emoteKey
+				})
+				
+				break
+			end
+		end
+	end
+	
+	-- Sort emotes alphabetically by key
+	local sortFunc = function(a, b) return a.key < b.key end
+	for i = EMOTE_REACTION_TYPES.NONE, EMOTE_REACTION_TYPES.AV do
+		table.sort(emotesByReaction[i], sortFunc)
+	end
+	
+	self:BuildTooltip()
+end
+
+function EmoteLDB:ReturnToCategoryList()
+	DebugPrint("Returning to category list")
+	ClearTooltipState()
+	self:BuildTooltip()
+end
+
+function EmoteLDB:ToggleSlashCommands()
+	self.db.profile.showSlashCommand = not self.db.profile.showSlashCommand
+	self:BuildTooltip()
+end
+
+function EmoteLDB:ToggleMinimapIcon()
+	self.db.global.LibDBIcon.hide = not self.db.global.LibDBIcon.hide
+	
+	if self.db.global.LibDBIcon.hide then
+		LibDBIcon:Hide("EmoteLDB")
+	else
+		LibDBIcon:Show("EmoteLDB")
+	end
+	
+	self:BuildTooltip()
+end
+
+--------------------------------------------------------------------------------
+-- Slash Commands
+--------------------------------------------------------------------------------
+SLASH_EMOTELDB1, SLASH_EMOTELDB2 = "/emoteldb", "/eldb"
+
+function SlashCmdList.EMOTELDB(msg)
+	msg = msg and msg:trim():lower() or ""
+	
+	if msg == "" then
+		print("EmoteLDB Command List (/emoteldb or /eldb):")
+		print("/emoteldb toggleicon - Toggle the minimap icon")
+		print("/emoteldb showslash - Toggle the showing of emote slash commands")
+		return
+	end
+	
+	if msg == "toggleicon" then
+		EmoteLDB:ToggleMinimapIcon()
+		
+		local status = EmoteLDB.db.global.LibDBIcon.hide 
+			and "|cFFFF0000HIDDEN|r"
+			or "|cFF00FF00VISIBLE|r"
+		print("EmoteLDB: Minimap icon is now " .. status)
+		
+	elseif msg == "showslash" then
+		EmoteLDB:ToggleSlashCommands()
+		
+		local status = EmoteLDB.db.profile.showSlashCommand 
+			and "|cFF00FF00ON|r"
+			or "|cFFFF0000OFF|r"
+		print("EmoteLDB: Slash commands are now " .. status)
+		
+	else
+		print("EmoteLDB: Invalid command!")
+		print("Use /emoteldb or /eldb for help")
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Addon Initialization
+--------------------------------------------------------------------------------
 function EmoteLDB:OnInitialize()
-  self.db = LibStub("AceDB-3.0"):New("EmoteLDBDB", defaults)
-  icon:Register("EmoteLDB", EmoteLDBObj, self.db.global.LibDBIcon) -- Minimap
-  if self.db.global.LibDBIcon.hide then
-    icon:Hide("EmoteLDB")
-  end
+	-- Initialize database
+	self.db = LibStub("AceDB-3.0"):New("EmoteLDBDB", defaults, true)
+	
+	-- Initialize state
+	ClearTooltipState()
+	
+	-- Create LibDataBroker object
+	dataObject = LibDataBroker:NewDataObject("EmoteLDB", {
+		type = "launcher",
+		text = "EmoteLDB",
+		icon = "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+		OnClick = function(frame, button)
+			EmoteLDB:OnDataObjectClick(frame, button)
+		end,
+		OnTooltipShow = function(tooltip)
+			EmoteLDB:OnTooltipShow(tooltip)
+		end,
+	})
+	
+	-- Register with LibDBIcon for minimap button
+	LibDBIcon:Register("EmoteLDB", dataObject, self.db.global.LibDBIcon)
+	
+	DebugPrint("EmoteLDB initialized")
 end
 
--- Hide tooltip when mousing out of data object
--- If the tooltip is being moused over, does nothing
-function HideTooltip()
-  if not ELDBTip then return end
-  if MouseIsOver(ELDBTip) then return end
-  debugPrint("In HideTooltip, destroying tooltip")
-  if QTC:IsAcquired("EmoteLDBTooltip") then
-    ELDBTip:Clear()
-  end
-  QTC:Release(ELDBTip)
-  ELDBTip = nil
-  info = nil
-  infoArray = {}
-  key = nil
-  keyArray = {}
-  emoteTable = {}
+function EmoteLDB:OnEnable()
+	DebugPrint("EmoteLDB enabled")
 end
 
--- Handle mouseover of the data object
-function EmoteLDBObj:OnEnter()
-  debugPrint("Entered Object")
-  ELDBTip = QTC:Acquire("EmoteLDBTooltip", 2, "LEFT", "LEFT", "LEFT")
-  EmoteLDB.ELDBTip = ELDBTip
-  ELDBTip:SmartAnchorTo(self)
-  ELDBTip:SetAutoHideDelay(0.1, self)
-  -- Since we should only be receiving a fresh category menu on mouseover, we clear all data
-  ELDBTip:Clear()
-  key = nil
-  keyArray = {}
-  info = nil
-  infoArray = {}
-  emoteTable = {}
-  -- Call the method to build the tooltip
-  EmoteLDB:BuildTooltip(key, info)
-  -- Actually display the tooltip
-  ELDBTip:Show()
+function EmoteLDB:OnDataObjectClick(frame, button)
+	if button == "LeftButton" then
+		if tooltip:IsShown() then
+			tooltip:Hide()
+		else
+			tooltip:SmartAnchorTo(frame)
+			self:BuildTooltip()
+		end
+	end
 end
 
--- Handle mousing out of the data object
-function EmoteLDBObj:OnLeave()
-  debugPrint("Leaving Object")
-  HideTooltip()
-end
-
--- Handle clicking of the object itself (re-using the same emote as last selected)
-function EmoteLDBObj.OnClick(self, button)
-  emoteToUse = gsub(EmoteLDBObj.text, "/", "")
-  if button == "LeftButton" then
-    if EmoteLDBObj.text == L["Last Emote Used"] then return end
-    HandleModClick(_, emoteToUse)
-  else
-    debugPrint(button.." clicked")
-  end
-end
-
--- Build the tooltip!
-function EmoteLDB:BuildTooltip(key, info)
-  debugPrint("Inside BuildTooltip")
-  ELDBTip:Clear()
-  ELDBTip:SetScale(1)
-  
-  -- Make a larger header
-  local headerFont = CreateFont("EmoteLDBHeaderFont")
-  EmoteLDBHeaderFont:CopyFontObject(GameTooltipHeaderText)
-  EmoteLDBHeaderFont:SetFont(EmoteLDBHeaderFont:GetFont(), 15, "OUTLINE, MONOCHROME")
-  
-  -- Create the tooltip background
-  ELDBTip:SetBackdrop(tipcfg)
-  ELDBTip:SetBackdropColor(0, 0, 0, 1)
-  ELDBTip:SetBackdropBorderColor(255, 223, 0)
-
-  -- Dump the header into the tooltip
-  local y = ELDBTip:AddLine()
-  ELDBTip:SetCell(y, 1, "EmoteLDB", EmoteLDBHeaderFont, "CENTER", 2)
-  ELDBTip:AddLine(" ")
-
-  -- local next for speed increase
-  local next = next
-  
-  -- If we have an empty emoteTable, then display categories
-  if next(emoteTable) == nil then
-    -- Display category menu
-    for k, v in ipairs(EL_Types) do
-      local elType = k
-      local label = v
-      local y = ELDBTip:AddLine()
-    
-      ELDBTip:SetCell(y, 1, v, "CENTER", 2)
-      ELDBTip:SetCellScript(y, 1, "OnMouseDown", HandlerFunc, k)	
-    end
-    
-    -- Count total emotes if debugging
-    -- This may not be working, but not too worried since it's a debug item
-    if (addon.debug) then
-      local emoteCount = 0
-      for k, v in pairs(EL_Emotes) do
-        if ( v.custom[0] == "0" ) then
-          emoteCount = emoteCount + 1
-        end
-      end
-    end
-    
-    -- Display toggle option for slash commands
-    ELDBTip:AddLine(" ")
-    local y = ELDBTip:AddLine()
-    ELDBTip:SetCell(y, 1, L["Toggle the display of slash commands."], "CENTER", 2)
-    ELDBTip:SetCellScript(y, 1, "OnMouseDown", HandlerFunc, "showSlash")
-    local y = ELDBTip:AddLine()
-    ELDBTip:SetCell(y, 1, L["Currently: "], "RIGHT")
-    ELDBTip:SetCell(y, 2, format("%s", self.db.profile.showSlashCommand and "|c0000FF00Shown" or "|c00FF0000Hidden"), "LEFT")
-    ELDBTip:AddLine(" ")
-    
-    -- Display toggle option for minimap icon
-    local y = ELDBTip:AddLine()
-    ELDBTip:SetCell(y, 1, L["Toggle the display of the minimap button"], "CENTER", 2)
-    ELDBTip:SetCellScript(y, 1, "OnMouseDown", HandlerFunc, "miniToggle")
-    local y = ELDBTip:AddLine()
-    ELDBTip:SetCell(y, 1, L["Currently: "], "RIGHT")
-    ELDBTip:SetCell(y, 2, format("%s", self.db.global.LibDBIcon.hide and "|c00FF0000Hidden" or "|c0000FF00Shown"), "LEFT")
-    ELDBTip:AddLine(" ")
-    
-    -- Display EmoteLDB version
-    local y = ELDBTip:AddLine()
-    ELDBTip:SetCell(y, 1, L["EmoteLDB version: "], "RIGHT")
-    ELDBTip:SetCell(y, 2, format("%s", "|c00FF00FF" .. emoteVer), "LEFT")
-    
-    -- Display emote count from earlier, if debugging
-    if (addon.debug) then
-      ELDBTip:AddLine(" ")
-      local y = ELDBTip:AddLine()
-      ELDBTip:SetCell(y, 1, "Total Emotes: ", "RIGHT")
-      ELDBTip:SetCell(y, 2, format("%d", emoteCount), "LEFT")
-    end
-  -- If we have emoteTable data
-  else
-        -- Go back to category list
-        local y = ELDBTip:AddLine()
-        ELDBTip:SetCell(y, 1, "Return to Category List", "CENTER")
-        ELDBTip:SetCellScript(y, 1, "OnMouseDown", HandleModClick, "catList")
-        ELDBTip:AddLine(" ")
-        
-    local emoteLineText
-    local emoteCommand
-    local emoteCount = #emoteTable[0] + #emoteTable[1] + #emoteTable[2] + #emoteTable[3]
-    -- Reverse iterate through emoteTable keys, which are equivalent to the emote's reaction type
-    -- This sorts emotes as AV, then Vocal, then Action, then chat only
-    for i=3,0,-1 do
-      debugPrint("i = "..i)
-      for k, v in ipairs(emoteTable[i]) do
-        debugPrint("k = "..k)
-        debugPrint("v[1] = "..v[1])
-        debugPrint("v[2] = "..v[2])
-        debugPrint("v[3] = "..v[3])
-        if (self.db.profile.showSlashCommand) then
-          emoteLineText = v[1]..v[2]
-        else
-          emoteLineText = v[2]
-        end
-        emoteCommand = v[3]
-        local y = ELDBTip:AddLine()
-        ELDBTip:SetCell(y, 1, emoteLineText, "LEFT")
-        ELDBTip:SetCellScript(y, 1, "OnMouseDown", HandleModClick, emoteCommand)
-      end
-    end
-        debugPrint("emoteCount = "..emoteCount)
-    
-    -- If we have less than the count of emotes of the largest category in this category, add some filler lines
-    -- This stops the tooltip from shrinking, forcing the user's mouse off of the tooltip, and ultimately closing the tooltip
-        -- Current Largest Category: Reactions - 30 emotes
-    if emoteCount < 30 then
-      local fillerLines = 30 - emoteCount
-      for i=1,fillerLines do
-        ELDBTip:AddLine(" ")
-      end
-    end
-  end
-end
-
--- Create slash commands 
-SLASH_EMOTELDB1, SLASH_EMOTELDB2 = '/emoteldb', '/eldb'
-function SlashCmdList.EMOTELDB(msg, editbox)
-  if msg == nil or msg == '' then
-    print("EmoteLDB Command List (/emoteldb or /eldb):")
-    print("/emoteldb toggleicon: Toggle the minimap icon")
-    print("/emoteldb showslash: Toggle the showing of emote slash commands")
-  elseif msg == 'toggleicon' then
-    local onOff = "ERROR"
-    if self.db.global.LibDBIcon.hide == false then
-      onOff = "|c00FF0000HIDDEN"
-    else
-      onOff = "|c0000FF00VISIBLE"
-    end
-    self.db.global.LibDBIcon.hide = not self.db.global.LibDBIcon.hide
-    print("EmoteLDB: Making the minimap icon "..onOff)
-    if self.db.global.LibDBIcon.hide then
-      icon:Hide("EmoteLDB")
-    else
-      icon:Show("EmoteLDB")
-    end
-  elseif msg == 'showslash' then
-    local onOff = "ERROR"
-    if self.db.profile.showSlashCommand == false then 
-      onOff = "|c0000FF00ON"
-    else
-      onOff = "|c00FF0000OFF"
-    end
-    print("EmoteLDB: Toggled visibility of slash commands "..onOff)
-    self.db.profile.showSlashCommand = not self.db.profile.showSlashCommand
-  else
-    print("Invalid Command!")
-    print("EmoteLDB Command List (/emoteldb or /eldb):")
-    print("/emoteldb toggleicon: Toggle the minimap icon")
-    print("/emoteldb showslash: Toggle the showing of emote slash commands")
-  end
-end
-
--- Function for easy debugging
-function debugPrint(text)
-  if (addon.debug) then
-    DEFAULT_CHAT_FRAME:AddMessage(text)
-  end
+function EmoteLDB:OnTooltipShow(tt)
+	tt:AddLine("EmoteLDB")
+	tt:AddLine(L["Last Emote Used"] or "Click to access emotes", 1, 1, 1)
 end

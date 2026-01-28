@@ -1,1335 +1,401 @@
-local addonName, addon = ...
+-- EmoteData.lua - Emote data structure for EmoteLDB
+local addonName, EmoteLDB = ...
+local L = EmoteLDB.L
 
--- Initialize localization
-local L = nil
-local AL = LibStub:GetLibrary("AceLocale-3.0", true)
-if AL then
-  if type(addon.LoadTranslations) == "function" then
-    addon:LoadTranslations(AL)
-    addon.LoadTranslations = nil
-  end
-  L = AL:GetLocale(addonName)
-  AL = nil
-else
-  L = setmetatable({}, {__index = function(t,k) t[k] = k return k end })
-end
-addon.L = L
+--------------------------------------------------------------------------------
+-- Constants
+--------------------------------------------------------------------------------
+-- Category IDs (used for types)
+local CATEGORY = {
+	FRIENDLY = 1,
+	HOSTILE = 2,
+	HAPPY = 3,
+	NEUTRAL = 4,
+	UNHAPPY = 5,
+	CUSTOM = 6,
+	TAUNTS = 7,
+	AFFECTION = 8,
+	GREETINGS = 9,
+	COMBAT = 10,
+	SELF_DEPRECATING = 11,
+	REACTIONS = 12,
+	OTHER = 13
+}
 
+-- Reaction types (visual/audio effects)
+local REACTION = {
+	NONE = 0,    -- Chat only
+	ACTION = 1,  -- Animated
+	VOCAL = 2,   -- Voice/sound
+	AV = 3       -- Both animated and voiced
+}
+
+--------------------------------------------------------------------------------
+-- Category Names
+--------------------------------------------------------------------------------
 EL_Types = {
-  [1] = L["Friendly"],
-  [2] = L["Hostile"],
-  [3] = L["Happy"],
-  [4] = L["Neutral"],
-  [5] = L["Unhappy"],
-  [6] = L["Custom"],
-  [7] = L["Taunts"],
-  [8] = L["Affection"],
-  [9] = L["Greetings"],
-  [10] = L["Combat"],
-  [11] = L["Self-Deprecating"],
-  [12] = L["Reactions"],
-  [13] = L["Other"],
+	[CATEGORY.FRIENDLY] = L["Friendly"],
+	[CATEGORY.HOSTILE] = L["Hostile"],
+	[CATEGORY.HAPPY] = L["Happy"],
+	[CATEGORY.NEUTRAL] = L["Neutral"],
+	[CATEGORY.UNHAPPY] = L["Unhappy"],
+	[CATEGORY.CUSTOM] = L["Custom"],
+	[CATEGORY.TAUNTS] = L["Taunts"],
+	[CATEGORY.AFFECTION] = L["Affection"],
+	[CATEGORY.GREETINGS] = L["Greetings"],
+	[CATEGORY.COMBAT] = L["Combat"],
+	[CATEGORY.SELF_DEPRECATING] = L["Self-Deprecating"],
+	[CATEGORY.REACTIONS] = L["Reactions"],
+	[CATEGORY.OTHER] = L["Other"]
 }
 
+--------------------------------------------------------------------------------
+-- Reaction Labels
+--------------------------------------------------------------------------------
 EL_React = {
-  [0] = "",
-  [1] = L["Action"],
-  [2] = L["Vocal"],
-  [3] = L["AV"],
+	[REACTION.NONE] = "",
+	[REACTION.ACTION] = L["Action"],
+	[REACTION.VOCAL] = L["Vocal"],
+	[REACTION.AV] = L["AV"]
 }
 
--- CUSTOM EMOTE VARIABLES: <Target>, <He>, <His>, <he>, <his>
--- The text for custom emotes should NOT contain the player's name at the beginning. It will be sent with a /e preceeding it.
--- NOTE: They MUST start with category 6, no matter how many other categories are added.
--- ALSO NOTE: If you add a custom emote, you MUST include the "["custom"] = {1}," line or it will be improperly indexed as having a slash command!
+--------------------------------------------------------------------------------
+-- Helper Function for Creating Emote Entries
+--------------------------------------------------------------------------------
+-- Creates a standardized emote entry
+-- @param types: table of category IDs
+-- @param none: text when no target
+-- @param target: text when targeting someone
+-- @param react: reaction type (REACTION.NONE, ACTION, VOCAL, or AV)
+-- @param isCustom: boolean, true if this is a custom emote
+local function CreateEmote(types, none, target, react, isCustom)
+	return {
+		types = types,
+		none = none,
+		target = target,
+		react = react,
+		custom = isCustom and {1} or {0}  -- Keep for backward compatibility
+	}
+end
+
+--------------------------------------------------------------------------------
+-- Emote Database
+--------------------------------------------------------------------------------
+--[[ 
+CUSTOM EMOTE NOTES:
+- Custom emotes use template variables: <Target>, <He>, <His>, <he>, <his>
+- The text should NOT contain the player's name at the beginning
+- Custom emotes are sent with /e (emote command)
+- Custom emotes MUST be category 6 (CUSTOM) or include it in their types
+]]
 
 EL_Emotes = {
-  ["escape"] = { -- CUSTOM EMOTE
-    ["types"] = {6},
-    ["none"] = L["escape"],
-    ["target"] = L["escape_target"],
-    ["react"] = 0,
-    ["custom"] = {1},
-  },
-  ["bio"] = { -- CUSTOM EMOTE
-    ["types"] = {6,13},
-    ["none"] = L["bio"],
-    ["target"] = L["bio_target"],
-    ["react"] = 0,
-    ["custom"] = {1},
-  },
-  ["bladeintro"] = { -- CUSTOM EMOTE
-    ["types"] = {6,2},
-    ["none"] = L["bladeintro"],
-    ["target"] = L["bladeintro_target"],
-    ["react"] = 0,
-    ["custom"] = {1},
-  },
-  ["mountspecial"] = { -- /mountspecial
-    ["types"] = {4,13},
-    ["none"] = L["mountspecial"],
-    ["target"] = L["mountspecial_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["agree"] = { -- Begin Blizzard emotes
-    ["types"] = {12},
-    ["none"] = L["agree"],
-    ["target"] = L["agree_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["amaze"] = {
-    ["types"] = {12},
-    ["none"] = L["amaze"],
-    ["target"] = L["amaze_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["angry"] = {
-    ["types"] = {2},
-    ["none"] = L["angry"],
-    ["target"] = L["angry_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["apologize"] = {
-    ["types"] = {11},
-    ["none"] = L["apologize"],
-    ["target"] = L["apologize_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["applaud"] = {
-    ["types"] = {12},
-    ["none"] = L["applaud"],
-    ["target"] = L["applaud_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["arm"] = {
-    ["types"] = {1, 8},
-    ["none"] = L["arm"],
-    ["target"] = L["arm_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["attacktarget"] = {
-    ["types"] = {10},
-    ["none"] = L["attacktarget"],
-    ["target"] = L["attacktarget_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["bark"] = {
-    ["types"] = {13},
-    ["none"] = L["bark"],
-    ["target"] = L["bark_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["bashful"] = {
-    ["types"] = {8},
-    ["none"] = L["bashful"],
-    ["target"] = L["bashful_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["beckon"] = {
-    ["types"] = {9},
-    ["none"] = L["beckon"],
-    ["target"] = L["beckon_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["beg"] = {
-    ["types"] = {11},
-    ["none"] = L["beg"],
-    ["target"] = L["beg_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["belch"] = {
-    ["types"] = {7},
-    ["none"] = L["belch"],
-    ["target"] = L["belch_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["bite"] = {
-    ["types"] = {2},
-    ["none"] = L["bite"],
-    ["target"] = L["bite_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["bleed"] = {
-    ["types"] = {13},
-    ["none"] = L["bleed"],
-    ["target"] = L["bleed_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["blink"] = {
-    ["types"] = {12},
-    ["none"] = L["blink"],
-    ["target"] = L["blink_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["blush"] = {
-    ["types"] = {8},
-    ["none"] = L["blush"],
-    ["target"] = L["blush_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["boggle"] = {
-    ["types"] = {12},
-    ["none"] = L["boggle"],
-    ["target"] = L["boggle_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["bonk"] = {
-    ["types"] = {12},
-    ["none"] = L["bonk"],
-    ["target"] = L["bonk_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["boop"] = {
-    ["types"] = {1,3,4,8,9},
-    ["none"] = L["boop"],
-    ["target"] = L["boop_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["bored"] = {
-    ["types"] = {5},
-    ["none"] = L["bored"],
-    ["target"] = L["bored_target"],
-    ["react"] = 2,
-    ["custom"] = {0},
-  },
-  ["bounce"] = {
-    ["types"] = {3},
-    ["none"] = L["bounce"],
-    ["target"] = L["bounce_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["bow"] = {
-    ["types"] = {9},
-    ["none"] = L["bow"],
-    ["target"] = L["bow_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["brandish"] = {
-    ["types"] = {2},
-    ["none"] = L["brandish"],
-    ["target"] = L["brandish_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["brb"] = {
-    ["types"] = {4,10,12},
-    ["none"] = L["brb"],
-    ["target"] = L["brb_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["cackle"] = {
-    ["types"] = {3},
-    ["none"] = L["cackle"],
-    ["target"] = L["cackle_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["calm"] = {
-    ["types"] = {4},
-    ["none"] = L["calm"],
-    ["target"] = L["calm_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["charge"] = {
-    ["types"] = {10},
-    ["none"] = L["charge"],
-    ["target"] = L["charge_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["cheer"] = {
-    ["types"] = {3,12},
-    ["none"] = L["cheer"],
-    ["target"] = L["cheer_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["chicken"] = {
-    ["types"] = {7},
-    ["none"] = L["chicken"],
-    ["target"] = L["chicken_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["chuckle"] = {
-    ["types"] = {3},
-    ["none"] = L["chuckle"],
-    ["target"] = L["chuckle_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["clap"] = {
-    ["types"] = {3,12},
-    ["none"] = L["clap"],
-    ["target"] = L["clap_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["cold"] = {
-    ["types"] = {13},
-    ["none"] = L["cold"],
-    ["target"] = L["cold_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["comfort"] = {
-    ["types"] = {8},
-    ["none"] = L["comfort"],
-    ["target"] = L["comfort_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["commend"] = {
-    ["types"] = {10},
-    ["none"] = L["commend"],
-    ["target"] = L["commend_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["confused"] = {
-    ["types"] = {11,12},
-    ["none"] = L["confused"],
-    ["target"] = L["confused_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["congrats"] = {
-    ["types"] = {10,12},
-    ["none"] = L["congrats"],
-    ["target"] = L["congrats_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["cough"] = {
-    ["types"] = {13},
-    ["none"] = L["cough"],
-    ["target"] = L["cough_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["cower"] = {
-    ["types"] = {11},
-    ["none"] = L["cower"],
-    ["target"] = L["cower_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["crack"] = {
-    ["types"] = {2},
-    ["none"] = L["crack"],
-    ["target"] = L["crack_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["cringe"] = {
-    ["types"] = {11},
-    ["none"] = L["cringe"],
-    ["target"] = L["cringe_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["cry"] = {
-    ["types"] = {5},
-    ["none"] = L["cry"],
-    ["target"] = L["cry_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["cuddle"] = {
-    ["types"] = {8},
-    ["none"] = L["cuddle"],
-    ["target"] = L["cuddle_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["curious"] = {
-    ["types"] = {12},
-    ["none"] = L["curious"],
-    ["target"] = L["curious_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["curtsey"] = {
-    ["types"] = {9},
-    ["none"] = L["curtsey"],
-    ["target"] = L["curtsey_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["dance"] = {
-    ["types"] = {3,8},
-    ["none"] = L["dance"],
-    ["target"] = L["dance_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["ding"] = {
-    ["types"] = {3,4},
-    ["none"] = L["ding"],
-    ["target"] = L["ding_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["doom"] = {
-    ["types"] = {2},
-    ["none"] = L["doom"],
-    ["target"] = L["doom_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["drink"] = {
-    ["types"] = {1},
-    ["none"] = L["drink"],
-    ["target"] = L["drink_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["drool"] = {
-    ["types"] = {13},
-    ["none"] = L["drool"],
-    ["target"] = L["drool_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["duck"] = {
-    ["types"] = {12},
-    ["none"] = L["duck"],
-    ["target"] = L["duck_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["eat"] = {
-    ["types"] = {13},
-    ["none"] = L["eat"],
-    ["target"] = L["eat_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["excited"] = {
-    ["types"] = {1},
-    ["none"] = L["excited"],
-    ["target"] = L["excited"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["eye"] = {
-    ["types"] = {13},
-    ["none"] = L["eye"],
-    ["target"] = L["eye_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["facepalm"] = {
-    ["types"] = {7,12},
-    ["none"] = L["facepalm"],
-    ["target"] = L["facepalm_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["fart"] = {
-    ["types"] = {7,11},
-    ["none"] = L["fart"],
-    ["target"] = L["fart_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["fidget"] = {
-    ["types"] = {5},
-    ["none"] = L["fidget"],
-    ["target"] = L["fidget_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["flee"] = {
-    ["types"] = {10},
-    ["none"] = L["flee"],
-    ["target"] = L["flee_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["flex"] = {
-    ["types"] = {8},
-    ["none"] = L["flex"],
-    ["target"] = L["flex_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["flirt"] = {
-    ["types"] = {8},
-    ["none"] = L["flirt"],
-    ["target"] = L["flirt_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["flop"] = {
-    ["types"] = {11},
-    ["none"] = L["flop"],
-    ["target"] = L["flop_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["followme"] = {
-    ["types"] = {10},
-    ["none"] = L["followme"],
-    ["target"] = L["followme_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["frown"] = {
-    ["types"] = {5},
-    ["none"] = L["frown"],
-    ["target"] = L["frown_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["gasp"] = {
-    ["types"] = {12},
-    ["none"] = L["gasp"],
-    ["target"] = L["gasp_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["gaze"] = {
-    ["types"] = {13},
-    ["none"] = L["gaze"],
-    ["target"] = L["gaze_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["giggle"] = {
-    ["types"] = {3},
-    ["none"] = L["giggle"],
-    ["target"] = L["giggle_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["glare"] = {
-    ["types"] = {2},
-    ["none"] = L["glare"],
-    ["target"] = L["glare_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["gloat"] = {
-    ["types"] = {7},
-    ["none"] = L["gloat"],
-    ["target"] = L["gloat_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["golfclap"] = {
-    ["types"] = {7},
-    ["none"] = L["golfclap"],
-    ["target"] = L["golfclap_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["goodbye"] = {
-    ["types"] = {9},
-    ["none"] = L["goodbye"],
-    ["target"] = L["goodbye_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["greet"] = {
-    ["types"] = {9},
-    ["none"] = L["greet"],
-    ["target"] = L["greet_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["grin"] = {
-    ["types"] = {3},
-    ["none"] = L["grin"],
-    ["target"] = L["grin_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["groan"] = {
-    ["types"] = {13},
-    ["none"] = L["groan"],
-    ["target"] = L["groan_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["grovel"] = {
-    ["types"] = {11},
-    ["none"] = L["grovel"],
-    ["target"] = L["grovel_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["growl"] = {
-    ["types"] = {2},
-    ["none"] = L["growl"],
-    ["target"] = L["growl_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["guffaw"] = {
-    ["types"] = {3},
-    ["none"] = L["guffaw"],
-    ["target"] = L["guffaw_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["hail"] = {
-    ["types"] = {9},
-    ["none"] = L["hail"],
-    ["target"] = L["hail_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["happy"] = {
-    ["types"] = {3},
-    ["none"] = L["happy"],
-    ["target"] = L["happy_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["healme"] = {
-    ["types"] = {10},
-    ["none"] = L["healme"],
-    ["target"] = L["healme_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["hello"] = {
-    ["types"] = {9},
-    ["none"] = L["hello"],
-    ["target"] = L["hello_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["helpme"] = {
-    ["types"] = {10},
-    ["none"] = L["helpme"],
-    ["target"] = L["helpme_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["highfive"] = {
-    ["types"] = {3,9,12},
-    ["none"] = L["highfive"],
-    ["target"] = L["highfive_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["holdhand"] = {
-    ["types"] = {1,5,8},
-    ["none"] = L["holdhand"],
-    ["target"] = L["holdhand_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["hug"] = {
-    ["types"] = {8},
-    ["none"] = L["hug"],
-    ["target"] = L["hug_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["hungry"] = {
-    ["types"] = {4},
-    ["none"] = L["hungry"],
-    ["target"] = L["hungry_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["huzzah"] = {
-    ["types"] = {1, 8, 12},
-    ["none"] = L["huzzah"],
-    ["target"] = L["huzzah_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["impressed"] = {
-    ["types"] = {1, 8, 12},
-    ["none"] = L["impressed"],
-    ["target"] = L["impressed_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["incoming"] = {
-    ["types"] = {10},
-    ["none"] = L["incoming"],
-    ["target"] = L["incoming_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["insult"] = {
-    ["types"] = {7},
-    ["none"] = L["insult"],
-    ["target"] = L["insult_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["introduce"] = {
-    ["types"] = {9},
-    ["none"] = L["introduce"],
-    ["target"] = L["introduce_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["jk"] = {
-    ["types"] = {13},
-    ["none"] = L["jk"],
-    ["target"] = L["jk_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["kiss"] = {
-    ["types"] = {8},
-    ["none"] = L["kiss"],
-    ["target"] = L["kiss_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["kneel"] = {
-    ["types"] = {4},
-    ["none"] = L["kneel"],
-    ["target"] = L["kneel_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["laugh"] = {
-    ["types"] = {3},
-    ["none"] = L["laugh"],
-    ["target"] = L["laugh_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["lavish"] = {
-    ["types"] = {1},
-    ["none"] = L["lavish"],
-    ["target"] = L["lavish_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["lay"] = {
-    ["types"] = {4},
-    ["none"] = L["lay"],
-    ["target"] = L["lay_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["lick"] = {
-    ["types"] = {8},
-    ["none"] = L["lick"],
-    ["target"] = L["lick_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["listen"] = {
-    ["types"] = {1},
-    ["none"] = L["listen"],
-    ["target"] = L["listen_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["lost"] = {
-    ["types"] = {5},
-    ["none"] = L["lost"],
-    ["target"] = L["lost_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["love"] = {
-    ["types"] = {8},
-    ["none"] = L["love"],
-    ["target"] = L["love_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["magnificent"] = {
-    ["types"] = {1, 8, 12},
-    ["none"] = L["magnificent"],
-    ["target"] = L["magnificent_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["massage"] = {
-    ["types"] = {8},
-    ["none"] = L["massage"],
-    ["target"] = L["massage_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["meow"] = {
-    ["types"] = {1,3,8,9},
-    ["none"] = L["meow"],
-    ["target"] = L["meow_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["mock"] = {
-    ["types"] = {5},
-    ["none"] = L["mock"],
-    ["target"] = L["mock_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["moo"] = {
-    ["types"] = {9},
-    ["none"] = L["moo"],
-    ["target"] = L["moo_target"],
-    ["react"] = 2,
-    ["custom"] = {0},
-  },
-  ["moon"] = {
-    ["types"] = {7},
-    ["none"] = L["moon"],
-    ["target"] = L["moon_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["mourn"] = {
-    ["types"] = {13},
-    ["none"] = L["mourn"],
-    ["target"] = L["mourn_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["no"] = {
-    ["types"] = {4},
-    ["none"] = L["no"],
-    ["target"] = L["no_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["nod"] = {
-    ["types"] = {4},
-    ["none"] = L["nod"],
-    ["target"] = L["nod_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["nosepick"] = {
-    ["types"] = {13},
-    ["none"] = L["nosepick"],
-    ["target"] = L["nosepick_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["oom"] = {
-    ["types"] = {10},
-    ["none"] = L["oom"],
-    ["target"] = L["oom_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["openfire"] = {
-    ["types"] = {10},
-    ["none"] = L["openfire"],
-    ["target"] = L["openfire_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["panic"] = {
-    ["types"] = {11},
-    ["none"] = L["panic"],
-    ["target"] = L["panic_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["pat"] = {
-    ["types"] = {8},
-    ["none"] = L["pat"],
-    ["target"] = L["pat_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["peer"] = {
-    ["types"] = {4},
-    ["none"] = L["peer"],
-    ["target"] = L["peer_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["pity"] = {
-    ["types"] = {7},
-    ["none"] = L["pity"],
-    ["target"] = L["pity_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["plead"] = {
-    ["types"] = {11},
-    ["none"] = L["plead"],
-    ["target"] = L["plead_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["point"] = {
-    ["types"] = {10},
-    ["none"] = L["point"],
-    ["target"] = L["point_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["poke"] = {
-    ["types"] = {4},
-    ["none"] = L["poke"],
-    ["target"] = L["poke_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["ponder"] = {
-    ["types"] = {12},
-    ["none"] = L["ponder"],
-    ["target"] = L["ponder_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["pounce"] = {
-    ["types"] = {8},
-    ["none"] = L["pounce"],
-    ["target"] = L["pounce_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["pray"] = {
-    ["types"] = {4},
-    ["none"] = L["pray"],
-    ["target"] = L["pray_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["purr"] = {
-    ["types"] = {8},
-    ["none"] = L["purr"],
-    ["target"] = L["purr_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["puzzled"] = {
-    ["types"] = {12},
-    ["none"] = L["puzzled"],
-    ["target"] = L["puzzled_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["quack"] = {
-    ["types"] = {4,7,8,9,12},
-    ["none"] = L["quack"],
-    ["target"] = L["quack_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["question"] = {
-    ["types"] = {13},
-    ["none"] = L["question"],
-    ["target"] = L["question_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["raise"] = {
-    ["types"] = {13},
-    ["none"] = L["raise"],
-    ["target"] = L["raise_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["rasp"] = {
-    ["types"] = {7},
-    ["none"] = L["rasp"],
-    ["target"] = L["rasp_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["ready"] = {
-    ["types"] = {10},
-    ["none"] = L["ready"],
-    ["target"] = L["ready_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["regret"] = {
-    ["types"] = {2,5,7,10,12},
-    ["none"] = L["regret"],
-    ["target"] = L["regret_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["roar"] = {
-    ["types"] = {2},
-    ["none"] = L["roar"],
-    ["target"] = L["roar_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["rofl"] = {
-    ["types"] = {3},
-    ["none"] = L["rofl"],
-    ["target"] = L["rofl_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["rolleyes"] = {
-    ["types"] = {4,12},
-    ["none"] = L["rolleyes"],
-    ["target"] = L["rolleyes_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["rude"] = {
-    ["types"] = {7},
-    ["none"] = L["rude"],
-    ["target"] = L["rude_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["salute"] = {
-    ["types"] = {1},
-    ["none"] = L["salute"],
-    ["target"] = L["salute_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["scared"] = {
-    ["types"] = {11},
-    ["none"] = L["scared"],
-    ["target"] = L["scared_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["scratch"] = {
-    ["types"] = {13},
-    ["none"] = L["scratch"],
-    ["target"] = L["scratch_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["sexy"] = {
-    ["types"] = {8},
-    ["none"] = L["sexy"],
-    ["target"] = L["sexy"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["shimmy"] = {
-    ["types"] = {13},
-    ["none"] = L["shimmy"],
-    ["target"] = L["shimmy_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["shiver"] = {
-    ["types"] = {13},
-    ["none"] = L["shiver"],
-    ["target"] = L["shiver_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["shoo"] = {
-    ["types"] = {7},
-    ["none"] = L["shoo"],
-    ["target"] = L["shoo_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["shrug"] = {
-    ["types"] = {12},
-    ["none"] = L["shrug"],
-    ["target"] = L["shrug_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["shy"] = {
-    ["types"] = {8},
-    ["none"] = L["shy"],
-    ["target"] = L["shy_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["sigh"] = {
-    ["types"] = {5},
-    ["none"] = L["sigh"],
-    ["target"] = L["sigh_target"],
-    ["react"] = 2,
-    ["custom"] = {0},
-  },
-  ["silly"] = {
-    ["types"] = {3},
-    ["none"] = L["silly"],
-    ["target"] = L["silly_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["slap"] = {
-    ["types"] = {7},
-    ["none"] = L["slap"],
-    ["target"] = L["slap_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["sleep"] = {
-    ["types"] = {13},
-    ["none"] = L["sleep"],
-    ["target"] = L["sleep_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["smile"] = {
-    ["types"] = {3},
-    ["none"] = L["smile"],
-    ["target"] = L["smile_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["smirk"] = {
-    ["types"] = {3},
-    ["none"] = L["smirk"],
-    ["target"] = L["smirk_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["snarl"] = {
-    ["types"] = {2},
-    ["none"] = L["snarl"],
-    ["target"] = L["snarl_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["snicker"] = {
-    ["types"] = {3},
-    ["none"] = L["snicker"],
-    ["target"] = L["snicker_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["sniff"] = {
-    ["types"] = {12},
-    ["none"] = L["sniff"],
-    ["target"] = L["sniff_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["snub"] = {
-    ["types"] = {2},
-    ["none"] = L["snub"],
-    ["target"] = L["snub_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["soothe"] = {
-    ["types"] = {8},
-    ["none"] = L["soothe"],
-    ["target"] = L["soothe_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["stare"] = {
-    ["types"] = {2},
-    ["none"] = L["stare"],
-    ["target"] = L["stare_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["surprised"] = {
-    ["types"] = {12},
-    ["none"] = L["surprised"],
-    ["target"] = L["surprised_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["surrender"] = {
-    ["types"] = {5},
-    ["none"] = L["surrender"],
-    ["target"] = L["surrender_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["talk"] = {
-    ["types"] = {1,9,12,13},
-    ["none"] = L["talk"],
-    ["target"] = L["talk_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["tap"] = {
-    ["types"] = {12},
-    ["none"] = L["tap"],
-    ["target"] = L["tap_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["taunt"] = {
-    ["types"] = {7},
-    ["none"] = L["taunt"],
-    ["target"] = L["taunt_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["tease"] = {
-    ["types"] = {8},
-    ["none"] = L["tease"],
-    ["target"] = L["tease_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["thank"] = {
-    ["types"] = {1},
-    ["none"] = L["thank"],
-    ["target"] = L["thank_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["think"] = {
-    ["types"] = {4,12},
-    ["none"] = L["think"],
-    ["target"] = L["think_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["thirsty"] = {
-    ["types"] = {13},
-    ["none"] = L["thirsty"],
-    ["target"] = L["thirsty_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["tickle"] = {
-    ["types"] = {8},
-    ["none"] = L["tickle"],
-    ["target"] = L["tickle_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["tired"] = {
-    ["types"] = {13},
-    ["none"] = L["tired"],
-    ["target"] = L["tired_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["train"] = {
-    ["types"] = {12,13},
-    ["none"] = L["train"],
-    ["target"] = L["train_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["veto"] = {
-    ["types"] = {13},
-    ["none"] = L["veto"],
-    ["target"] = L["veto_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["victory"] = {
-    ["types"] = {12},
-    ["none"] = L["victory"],
-    ["target"] = L["victory_target"],
-    ["react"] = 1,
-    ["custom"] = {0},
-  },
-  ["violin"] = {
-    ["types"] = {7},
-    ["none"] = L["violin"],
-    ["target"] = L["violin_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["wait"] = {
-    ["types"] = {10},
-    ["none"] = L["wait"],
-    ["target"] = L["wait_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["wave"] = {
-    ["types"] = {9},
-    ["none"] = L["wave"],
-    ["target"] = L["wave_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["welcome"] = {
-    ["types"] = {9},
-    ["none"] = L["welcome"],
-    ["target"] = L["welcome_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["whine"] = {
-    ["types"] = {11},
-    ["none"] = L["whine"],
-    ["target"] = L["whine_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["whistle"] = {
-    ["types"] = {13},
-    ["none"] = L["whistle"],
-    ["target"] = L["whistle_target"],
-    ["react"] = 2,
-    ["custom"] = {0},
-  },
-  ["whoa"] = {
-    ["types"] = {4,12},
-    ["none"] = L["whoa"],
-    ["target"] = L["whoa_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
-  ["wince"] = {
-    ["types"] = {4, 12},
-    ["none"] = L["wince"],
-    ["target"] = L["wince_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["wink"] = {
-    ["types"] = {8},
-    ["none"] = L["wink"],
-    ["target"] = L["wink_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["work"] = {
-    ["types"] = {13},
-    ["none"] = L["work"],
-    ["target"] = L["work_target"],
-    ["react"] = 0,
-    ["custom"] = {0},
-  },
-  ["yawn"] = {
-    ["types"] = {13},
-    ["none"] = L["yawn"],
-    ["target"] = L["yawn_target"],
-    ["react"] = 2,
-    ["custom"] = {0},
-  },
-  ["yw"] = {
-    ["types"] = {1,12},
-    ["none"] = L["yw"],
-    ["target"] = L["yw_target"],
-    ["react"] = 3,
-    ["custom"] = {0},
-  },
+	--------------------------------------------------------------------------------
+	-- Custom Emotes
+	--------------------------------------------------------------------------------
+
+	["escape"] = CreateEmote(
+		{CATEGORY.CUSTOM},
+		L["escape"],
+		L["escape_target"],
+		REACTION.NONE,
+		true
+	),
+	
+	["bio"] = CreateEmote(
+		{CATEGORY.CUSTOM, CATEGORY.OTHER},
+		L["bio"],
+		L["bio_target"],
+		REACTION.NONE,
+		true
+	),
+	
+	["bladeintro"] = CreateEmote(
+		{CATEGORY.CUSTOM, CATEGORY.HOSTILE},
+		L["bladeintro"],
+		L["bladeintro_target"],
+		REACTION.NONE,
+		true
+	),
+	
+	--------------------------------------------------------------------------------
+	-- Special Commands (not standard emotes)
+	--------------------------------------------------------------------------------
+
+	["mountspecial"] = CreateEmote(
+		{CATEGORY.NEUTRAL, CATEGORY.OTHER},
+		L["mountspecial"],
+		L["mountspecial_target"],
+		REACTION.ACTION,
+		false
+	),
+	
+	--------------------------------------------------------------------------------
+	-- Standard Blizzard Emotes
+	--------------------------------------------------------------------------------
+	
+	-- A
+	["agree"] = CreateEmote({CATEGORY.REACTIONS}, L["agree"], L["agree_target"], REACTION.NONE, false),
+	["amaze"] = CreateEmote({CATEGORY.REACTIONS}, L["amaze"], L["amaze_target"], REACTION.NONE, false),
+	["angry"] = CreateEmote({CATEGORY.HOSTILE}, L["angry"], L["angry_target"], REACTION.ACTION, false),
+	["apologize"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["apologize"], L["apologize_target"], REACTION.NONE, false),
+	["applaud"] = CreateEmote({CATEGORY.REACTIONS}, L["applaud"], L["applaud_target"], REACTION.AV, false),
+	["arm"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.AFFECTION}, L["arm"], L["arm_target"], REACTION.NONE, false),
+	["attacktarget"] = CreateEmote({CATEGORY.COMBAT}, L["attacktarget"], L["attacktarget_target"], REACTION.AV, false),
+	
+	-- B
+	["bark"] = CreateEmote({CATEGORY.OTHER}, L["bark"], L["bark_target"], REACTION.NONE, false),
+	["bashful"] = CreateEmote({CATEGORY.AFFECTION}, L["bashful"], L["bashful_target"], REACTION.ACTION, false),
+	["beckon"] = CreateEmote({CATEGORY.GREETINGS}, L["beckon"], L["beckon_target"], REACTION.NONE, false),
+	["beg"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["beg"], L["beg_target"], REACTION.ACTION, false),
+	["belch"] = CreateEmote({CATEGORY.TAUNTS}, L["belch"], L["belch_target"], REACTION.NONE, false),
+	["bite"] = CreateEmote({CATEGORY.HOSTILE}, L["bite"], L["bite_target"], REACTION.NONE, false),
+	["bleed"] = CreateEmote({CATEGORY.OTHER}, L["bleed"], L["bleed_target"], REACTION.NONE, false),
+	["blink"] = CreateEmote({CATEGORY.REACTIONS}, L["blink"], L["blink_target"], REACTION.NONE, false),
+	["blush"] = CreateEmote({CATEGORY.AFFECTION}, L["blush"], L["blush_target"], REACTION.ACTION, false),
+	["boggle"] = CreateEmote({CATEGORY.REACTIONS}, L["boggle"], L["boggle_target"], REACTION.ACTION, false),
+	["bonk"] = CreateEmote({CATEGORY.REACTIONS}, L["bonk"], L["bonk_target"], REACTION.NONE, false),
+	["boop"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.HAPPY, CATEGORY.NEUTRAL, CATEGORY.AFFECTION, CATEGORY.GREETINGS}, L["boop"], L["boop_target"], REACTION.ACTION, false),
+	["bored"] = CreateEmote({CATEGORY.UNHAPPY}, L["bored"], L["bored_target"], REACTION.VOCAL, false),
+	["bounce"] = CreateEmote({CATEGORY.HAPPY}, L["bounce"], L["bounce_target"], REACTION.NONE, false),
+	["bow"] = CreateEmote({CATEGORY.GREETINGS}, L["bow"], L["bow_target"], REACTION.ACTION, false),
+	["brandish"] = CreateEmote({CATEGORY.HOSTILE}, L["brandish"], L["brandish_target"], REACTION.NONE, false),
+	["brb"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.COMBAT, CATEGORY.REACTIONS}, L["brb"], L["brb_target"], REACTION.NONE, false),
+	
+	-- C
+	["cackle"] = CreateEmote({CATEGORY.HAPPY}, L["cackle"], L["cackle_target"], REACTION.AV, false),
+	["calm"] = CreateEmote({CATEGORY.NEUTRAL}, L["calm"], L["calm_target"], REACTION.NONE, false),
+	["charge"] = CreateEmote({CATEGORY.COMBAT}, L["charge"], L["charge_target"], REACTION.AV, false),
+	["cheer"] = CreateEmote({CATEGORY.HAPPY, CATEGORY.REACTIONS}, L["cheer"], L["cheer_target"], REACTION.AV, false),
+	["chicken"] = CreateEmote({CATEGORY.TAUNTS}, L["chicken"], L["chicken_target"], REACTION.AV, false),
+	["chuckle"] = CreateEmote({CATEGORY.HAPPY}, L["chuckle"], L["chuckle_target"], REACTION.AV, false),
+	["clap"] = CreateEmote({CATEGORY.HAPPY, CATEGORY.REACTIONS}, L["clap"], L["clap_target"], REACTION.AV, false),
+	["cold"] = CreateEmote({CATEGORY.OTHER}, L["cold"], L["cold_target"], REACTION.NONE, false),
+	["comfort"] = CreateEmote({CATEGORY.AFFECTION}, L["comfort"], L["comfort_target"], REACTION.NONE, false),
+	["commend"] = CreateEmote({CATEGORY.COMBAT}, L["commend"], L["commend_target"], REACTION.AV, false),
+	["confused"] = CreateEmote({CATEGORY.SELF_DEPRECATING, CATEGORY.REACTIONS}, L["confused"], L["confused_target"], REACTION.ACTION, false),
+	["congrats"] = CreateEmote({CATEGORY.COMBAT, CATEGORY.REACTIONS}, L["congrats"], L["congrats_target"], REACTION.AV, false),
+	["cough"] = CreateEmote({CATEGORY.OTHER}, L["cough"], L["cough_target"], REACTION.NONE, false),
+	["cower"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["cower"], L["cower_target"], REACTION.NONE, false),
+	["crack"] = CreateEmote({CATEGORY.HOSTILE}, L["crack"], L["crack_target"], REACTION.NONE, false),
+	["cringe"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["cringe"], L["cringe_target"], REACTION.NONE, false),
+	["cry"] = CreateEmote({CATEGORY.UNHAPPY}, L["cry"], L["cry_target"], REACTION.AV, false),
+	["cuddle"] = CreateEmote({CATEGORY.AFFECTION}, L["cuddle"], L["cuddle_target"], REACTION.NONE, false),
+	["curious"] = CreateEmote({CATEGORY.REACTIONS}, L["curious"], L["curious_target"], REACTION.ACTION, false),
+	["curtsey"] = CreateEmote({CATEGORY.GREETINGS}, L["curtsey"], L["curtsey_target"], REACTION.ACTION, false),
+	
+	-- D
+	["dance"] = CreateEmote({CATEGORY.HAPPY, CATEGORY.AFFECTION}, L["dance"], L["dance_target"], REACTION.ACTION, false),
+	["ding"] = CreateEmote({CATEGORY.HAPPY, CATEGORY.NEUTRAL}, L["ding"], L["ding_target"], REACTION.NONE, false),
+	["doom"] = CreateEmote({CATEGORY.HOSTILE}, L["doom"], L["doom_target"], REACTION.NONE, false),
+	["drink"] = CreateEmote({CATEGORY.FRIENDLY}, L["drink"], L["drink_target"], REACTION.ACTION, false),
+	["drool"] = CreateEmote({CATEGORY.OTHER}, L["drool"], L["drool_target"], REACTION.NONE, false),
+	["duck"] = CreateEmote({CATEGORY.REACTIONS}, L["duck"], L["duck_target"], REACTION.NONE, false),
+	
+	-- E
+	["eat"] = CreateEmote({CATEGORY.OTHER}, L["eat"], L["eat_target"], REACTION.ACTION, false),
+	["excited"] = CreateEmote({CATEGORY.FRIENDLY}, L["excited"], L["excited"], REACTION.ACTION, false),
+	["eye"] = CreateEmote({CATEGORY.OTHER}, L["eye"], L["eye_target"], REACTION.NONE, false),
+	
+	-- F
+	["facepalm"] = CreateEmote({CATEGORY.TAUNTS, CATEGORY.REACTIONS}, L["facepalm"], L["facepalm_target"], REACTION.NONE, false),
+	["fart"] = CreateEmote({CATEGORY.TAUNTS, CATEGORY.SELF_DEPRECATING}, L["fart"], L["fart_target"], REACTION.NONE, false),
+	["fidget"] = CreateEmote({CATEGORY.UNHAPPY}, L["fidget"], L["fidget_target"], REACTION.NONE, false),
+	["flee"] = CreateEmote({CATEGORY.COMBAT}, L["flee"], L["flee_target"], REACTION.AV, false),
+	["flex"] = CreateEmote({CATEGORY.AFFECTION}, L["flex"], L["flex_target"], REACTION.ACTION, false),
+	["flirt"] = CreateEmote({CATEGORY.AFFECTION}, L["flirt"], L["flirt_target"], REACTION.AV, false),
+	["flop"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["flop"], L["flop_target"], REACTION.NONE, false),
+	["followme"] = CreateEmote({CATEGORY.COMBAT}, L["followme"], L["followme_target"], REACTION.AV, false),
+	["frown"] = CreateEmote({CATEGORY.UNHAPPY}, L["frown"], L["frown_target"], REACTION.NONE, false),
+	
+	-- G
+	["gasp"] = CreateEmote({CATEGORY.REACTIONS}, L["gasp"], L["gasp_target"], REACTION.ACTION, false),
+	["gaze"] = CreateEmote({CATEGORY.OTHER}, L["gaze"], L["gaze_target"], REACTION.NONE, false),
+	["giggle"] = CreateEmote({CATEGORY.HAPPY}, L["giggle"], L["giggle_target"], REACTION.AV, false),
+	["glare"] = CreateEmote({CATEGORY.HOSTILE}, L["glare"], L["glare_target"], REACTION.NONE, false),
+	["gloat"] = CreateEmote({CATEGORY.TAUNTS}, L["gloat"], L["gloat_target"], REACTION.AV, false),
+	["golfclap"] = CreateEmote({CATEGORY.TAUNTS}, L["golfclap"], L["golfclap_target"], REACTION.AV, false),
+	["goodbye"] = CreateEmote({CATEGORY.GREETINGS}, L["goodbye"], L["goodbye_target"], REACTION.AV, false),
+	["greet"] = CreateEmote({CATEGORY.GREETINGS}, L["greet"], L["greet_target"], REACTION.ACTION, false),
+	["grin"] = CreateEmote({CATEGORY.HAPPY}, L["grin"], L["grin_target"], REACTION.NONE, false),
+	["groan"] = CreateEmote({CATEGORY.OTHER}, L["groan"], L["groan_target"], REACTION.NONE, false),
+	["grovel"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["grovel"], L["grovel_target"], REACTION.ACTION, false),
+	["growl"] = CreateEmote({CATEGORY.HOSTILE}, L["growl"], L["growl_target"], REACTION.ACTION, false),
+	["guffaw"] = CreateEmote({CATEGORY.HAPPY}, L["guffaw"], L["guffaw_target"], REACTION.AV, false),
+	
+	-- H
+	["hail"] = CreateEmote({CATEGORY.GREETINGS}, L["hail"], L["hail_target"], REACTION.ACTION, false),
+	["happy"] = CreateEmote({CATEGORY.HAPPY}, L["happy"], L["happy_target"], REACTION.NONE, false),
+	["healme"] = CreateEmote({CATEGORY.COMBAT}, L["healme"], L["healme_target"], REACTION.AV, false),
+	["hello"] = CreateEmote({CATEGORY.GREETINGS}, L["hello"], L["hello_target"], REACTION.AV, false),
+	["helpme"] = CreateEmote({CATEGORY.COMBAT}, L["helpme"], L["helpme_target"], REACTION.AV, false),
+	["highfive"] = CreateEmote({CATEGORY.HAPPY, CATEGORY.GREETINGS, CATEGORY.REACTIONS}, L["highfive"], L["highfive_target"], REACTION.NONE, false),
+	["holdhand"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.UNHAPPY, CATEGORY.AFFECTION}, L["holdhand"], L["holdhand_target"], REACTION.NONE, false),
+	["hug"] = CreateEmote({CATEGORY.AFFECTION}, L["hug"], L["hug_target"], REACTION.NONE, false),
+	["hungry"] = CreateEmote({CATEGORY.NEUTRAL}, L["hungry"], L["hungry_target"], REACTION.NONE, false),
+	["huzzah"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.AFFECTION, CATEGORY.REACTIONS}, L["huzzah"], L["huzzah_target"], REACTION.ACTION, false),
+
+	-- I
+	["impressed"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.AFFECTION, CATEGORY.REACTIONS}, L["impressed"], L["impressed_target"], REACTION.AV, false),
+	["incoming"] = CreateEmote({CATEGORY.COMBAT}, L["incoming"], L["incoming_target"], REACTION.AV, false),
+	["insult"] = CreateEmote({CATEGORY.TAUNTS}, L["insult"], L["insult_target"], REACTION.ACTION, false),
+	["introduce"] = CreateEmote({CATEGORY.GREETINGS}, L["introduce"], L["introduce_target"], REACTION.NONE, false),
+
+	-- J
+	["jk"] = CreateEmote({CATEGORY.OTHER}, L["jk"], L["jk_target"], REACTION.NONE, false),
+
+	-- K
+	["kiss"] = CreateEmote({CATEGORY.AFFECTION}, L["kiss"], L["kiss_target"], REACTION.AV, false),
+	["kneel"] = CreateEmote({CATEGORY.NEUTRAL}, L["kneel"], L["kneel_target"], REACTION.ACTION, false),
+	
+	-- L
+	["laugh"] = CreateEmote({CATEGORY.HAPPY}, L["laugh"], L["laugh_target"], REACTION.AV, false),
+	["lavish"] = CreateEmote({CATEGORY.FRIENDLY}, L["lavish"], L["lavish_target"], REACTION.NONE, false),
+	["lay"] = CreateEmote({CATEGORY.NEUTRAL}, L["lay"], L["lay_target"], REACTION.ACTION, false),
+	["lick"] = CreateEmote({CATEGORY.AFFECTION}, L["lick"], L["lick_target"], REACTION.NONE, false),
+	["listen"] = CreateEmote({CATEGORY.FRIENDLY}, L["listen"], L["listen_target"], REACTION.NONE, false),
+	["lost"] = CreateEmote({CATEGORY.UNHAPPY}, L["lost"], L["lost_target"], REACTION.ACTION, false),
+	["love"] = CreateEmote({CATEGORY.AFFECTION}, L["love"], L["love_target"], REACTION.NONE, false),
+	
+	-- M
+	["magnificent"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.AFFECTION, CATEGORY.REACTIONS}, L["magnificent"], L["magnificent_target"], REACTION.ACTION, false),
+	["massage"] = CreateEmote({CATEGORY.AFFECTION}, L["massage"], L["massage_target"], REACTION.NONE, false),
+	["meow"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.HAPPY, CATEGORY.AFFECTION, CATEGORY.GREETINGS}, L["meow"], L["meow_target"], REACTION.NONE, false),
+	["mock"] = CreateEmote({CATEGORY.UNHAPPY}, L["mock"], L["mock_target"], REACTION.NONE, false),
+	["moo"] = CreateEmote({CATEGORY.GREETINGS}, L["moo"], L["moo_target"], REACTION.VOCAL, false),
+	["moon"] = CreateEmote({CATEGORY.TAUNTS}, L["moon"], L["moon_target"], REACTION.NONE, false),
+	["mourn"] = CreateEmote({CATEGORY.OTHER}, L["mourn"], L["mourn_target"], REACTION.AV, false),
+	
+	-- N
+	["no"] = CreateEmote({CATEGORY.NEUTRAL}, L["no"], L["no_target"], REACTION.AV, false),
+	["nod"] = CreateEmote({CATEGORY.NEUTRAL}, L["nod"], L["nod_target"], REACTION.AV, false),
+	["nosepick"] = CreateEmote({CATEGORY.OTHER}, L["nosepick"], L["nosepick_target"], REACTION.NONE, false),
+	
+	-- O
+	["oom"] = CreateEmote({CATEGORY.COMBAT}, L["oom"], L["oom_target"], REACTION.AV, false),
+	["openfire"] = CreateEmote({CATEGORY.COMBAT}, L["openfire"], L["openfire_target"], REACTION.AV, false),
+	
+	-- P
+	["panic"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["panic"], L["panic_target"], REACTION.NONE, false),
+	["pat"] = CreateEmote({CATEGORY.AFFECTION}, L["pat"], L["pat_target"], REACTION.NONE, false),
+	["peer"] = CreateEmote({CATEGORY.NEUTRAL}, L["peer"], L["peer_target"], REACTION.NONE, false),
+	["pity"] = CreateEmote({CATEGORY.TAUNTS}, L["pity"], L["pity_target"], REACTION.NONE, false),
+	["plead"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["plead"], L["plead_target"], REACTION.ACTION, false),
+	["point"] = CreateEmote({CATEGORY.COMBAT}, L["point"], L["point_target"], REACTION.ACTION, false),
+	["poke"] = CreateEmote({CATEGORY.NEUTRAL}, L["poke"], L["poke_target"], REACTION.NONE, false),
+	["ponder"] = CreateEmote({CATEGORY.REACTIONS}, L["ponder"], L["ponder_target"], REACTION.ACTION, false),
+	["pounce"] = CreateEmote({CATEGORY.AFFECTION}, L["pounce"], L["pounce_target"], REACTION.NONE, false),
+	["pray"] = CreateEmote({CATEGORY.NEUTRAL}, L["pray"], L["pray_target"], REACTION.ACTION, false),
+	["purr"] = CreateEmote({CATEGORY.AFFECTION}, L["purr"], L["purr_target"], REACTION.NONE, false),
+	["puzzled"] = CreateEmote({CATEGORY.REACTIONS}, L["puzzled"], L["puzzled_target"], REACTION.ACTION, false),
+
+	-- Q
+	["quack"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.TAUNTS, CATEGORY.AFFECTION, CATEGORY.GREETINGS, CATEGORY.REACTIONS}, L["quack"], L["quack_target"], REACTION.ACTION, false),
+	["question"] = CreateEmote({CATEGORY.OTHER}, L["question"], L["question_target"], REACTION.ACTION, false),
+	
+	-- R
+	["raise"] = CreateEmote({CATEGORY.OTHER}, L["raise"], L["raise_target"], REACTION.NONE, false),
+	["rasp"] = CreateEmote({CATEGORY.TAUNTS}, L["rasp"], L["rasp_target"], REACTION.AV, false),
+	["ready"] = CreateEmote({CATEGORY.COMBAT}, L["ready"], L["ready_target"], REACTION.NONE, false),
+	["regret"] = CreateEmote({CATEGORY.HOSTILE, CATEGORY.UNHAPPY, CATEGORY.TAUNTS, CATEGORY.COMBAT, CATEGORY.REACTIONS}, L["regret"], L["regret_target"], REACTION.NONE, false),
+	["roar"] = CreateEmote({CATEGORY.HOSTILE}, L["roar"], L["roar_target"], REACTION.ACTION, false),
+	["rofl"] = CreateEmote({CATEGORY.HAPPY}, L["rofl"], L["rofl_target"], REACTION.AV, false),
+	["rolleyes"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.REACTIONS}, L["rolleyes"], L["rolleyes_target"], REACTION.AV, false),
+	["rude"] = CreateEmote({CATEGORY.TAUNTS}, L["rude"], L["rude_target"], REACTION.ACTION, false),
+	
+	-- S
+	["salute"] = CreateEmote({CATEGORY.FRIENDLY}, L["salute"], L["salute_target"], REACTION.ACTION, false),
+	["scared"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["scared"], L["scared_target"], REACTION.NONE, false),
+	["scratch"] = CreateEmote({CATEGORY.OTHER}, L["scratch"], L["scratch_target"], REACTION.NONE, false),
+	["sexy"] = CreateEmote({CATEGORY.AFFECTION}, L["sexy"], L["sexy_target"], REACTION.NONE, false),
+	["shimmy"] = CreateEmote({CATEGORY.OTHER}, L["shimmy"], L["shimmy_target"], REACTION.NONE, false),
+	["shiver"] = CreateEmote({CATEGORY.OTHER}, L["shiver"], L["shiver_target"], REACTION.NONE, false),
+	["shoo"] = CreateEmote({CATEGORY.TAUNTS}, L["shoo"], L["shoo_target"], REACTION.NONE, false),
+	["shrug"] = CreateEmote({CATEGORY.REACTIONS}, L["shrug"], L["shrug_target"], REACTION.ACTION, false),
+	["shy"] = CreateEmote({CATEGORY.AFFECTION}, L["shy"], L["shy_target"], REACTION.ACTION, false),
+	["sigh"] = CreateEmote({CATEGORY.UNHAPPY}, L["sigh"], L["sigh_target"], REACTION.VOCAL, false),
+	["silly"] = CreateEmote({CATEGORY.HAPPY}, L["silly"], L["silly_target"], REACTION.AV, false),
+	["slap"] = CreateEmote({CATEGORY.TAUNTS}, L["slap"], L["slap_target"], REACTION.NONE, false),
+	["sleep"] = CreateEmote({CATEGORY.OTHER}, L["sleep"], L["sleep_target"], REACTION.ACTION, false),
+	["smile"] = CreateEmote({CATEGORY.HAPPY}, L["smile"], L["smile_target"], REACTION.NONE, false),
+	["smirk"] = CreateEmote({CATEGORY.HAPPY}, L["smirk"], L["smirk_target"], REACTION.NONE, false),
+	["snarl"] = CreateEmote({CATEGORY.HOSTILE}, L["snarl"], L["snarl_target"], REACTION.NONE, false),
+	["snicker"] = CreateEmote({CATEGORY.HAPPY}, L["snicker"], L["snicker_target"], REACTION.NONE, false),
+	["sniff"] = CreateEmote({CATEGORY.REACTIONS}, L["sniff"], L["sniff_target"], REACTION.NONE, false),
+	["snub"] = CreateEmote({CATEGORY.HOSTILE}, L["snub"], L["snub_target"], REACTION.NONE, false),
+	["soothe"] = CreateEmote({CATEGORY.AFFECTION}, L["soothe"], L["soothe_target"], REACTION.NONE, false),
+	["stare"] = CreateEmote({CATEGORY.HOSTILE}, L["stare"], L["stare_target"], REACTION.NONE, false),
+	["surprised"] = CreateEmote({CATEGORY.REACTIONS}, L["surprised"], L["surprised_target"], REACTION.NONE, false),
+	["surrender"] = CreateEmote({CATEGORY.UNHAPPY}, L["surrender"], L["surrender_target"], REACTION.ACTION, false),
+	
+	-- T
+	["talk"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.GREETINGS, CATEGORY.REACTIONS, CATEGORY.OTHER}, L["talk"], L["talk_target"], REACTION.ACTION, false),
+	["tap"] = CreateEmote({CATEGORY.REACTIONS}, L["tap"], L["tap_target"], REACTION.NONE, false),
+	["taunt"] = CreateEmote({CATEGORY.TAUNTS}, L["taunt"], L["taunt_target"], REACTION.NONE, false),
+	["tease"] = CreateEmote({CATEGORY.AFFECTION}, L["tease"], L["tease_target"], REACTION.NONE, false),
+	["thank"] = CreateEmote({CATEGORY.FRIENDLY}, L["thank"], L["thank_target"], REACTION.NONE, false),
+	["think"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.REACTIONS}, L["think"], L["think_target"], REACTION.NONE, false),
+	["thirsty"] = CreateEmote({CATEGORY.OTHER}, L["thirsty"], L["thirsty_target"], REACTION.NONE, false),
+	["tickle"] = CreateEmote({CATEGORY.AFFECTION}, L["tickle"], L["tickle_target"], REACTION.NONE, false),
+	["tired"] = CreateEmote({CATEGORY.OTHER}, L["tired"], L["tired_target"], REACTION.NONE, false),
+	["train"] = CreateEmote({CATEGORY.REACTIONS, CATEGORY.OTHER}, L["train"], L["train_target"], REACTION.AV, false),
+	
+	-- U
+
+	-- V
+	["veto"] = CreateEmote({CATEGORY.OTHER}, L["veto"], L["veto_target"], REACTION.NONE, false),
+	["victory"] = CreateEmote({CATEGORY.REACTIONS}, L["victory"], L["victory_target"], REACTION.ACTION, false),
+	["violin"] = CreateEmote({CATEGORY.TAUNTS}, L["violin"], L["violin_target"], REACTION.AV, false),
+
+	-- W
+	["wait"] = CreateEmote({CATEGORY.COMBAT}, L["wait"], L["wait_target"], REACTION.AV, false),
+	["wave"] = CreateEmote({CATEGORY.GREETINGS}, L["wave"], L["wave_target"], REACTION.NONE, false),
+	["welcome"] = CreateEmote({CATEGORY.GREETINGS}, L["welcome"], L["welcome_target"], REACTION.AV, false),
+	["whine"] = CreateEmote({CATEGORY.SELF_DEPRECATING}, L["whine"], L["whine_target"], REACTION.NONE, false),
+	["whistle"] = CreateEmote({CATEGORY.OTHER}, L["whistle"], L["whistle_target"], REACTION.VOCAL, false),
+	["whoa"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.REACTIONS}, L["whoa"], L["whoa_target"], REACTION.AV, false),
+	["wince"] = CreateEmote({CATEGORY.NEUTRAL, CATEGORY.REACTIONS}, L["wince"], L["wince_target"], REACTION.NONE, false),
+	["wink"] = CreateEmote({CATEGORY.AFFECTION}, L["wink"], L["wink_target"], REACTION.NONE, false),
+	["work"] = CreateEmote({CATEGORY.OTHER}, L["work"], L["work_target"], REACTION.NONE, false),
+
+	-- X
+
+	-- Y
+	["yawn"] = CreateEmote({CATEGORY.OTHER}, L["yawn"], L["yawn_target"], REACTION.VOCAL, false),
+	["yw"] = CreateEmote({CATEGORY.FRIENDLY, CATEGORY.REACTIONS}, L["yw"], L["yw_target"], REACTION.AV, false),
+
+	-- Z
 }
+
+--------------------------------------------------------------------------------
+-- Utility Functions (Optional - for future enhancements)
+--------------------------------------------------------------------------------
+
+-- Get all emotes in a specific category
+function EmoteLDB:GetEmotesInCategory(categoryId)
+	local emotes = {}
+	for key, data in pairs(EL_Emotes) do
+		for _, typeId in ipairs(data.types) do
+			if typeId == categoryId then
+				emotes[key] = data
+				break
+			end
+		end
+	end
+	return emotes
+end
+
+-- Check if an emote is custom
+function EmoteLDB:IsCustomEmote(emoteKey)
+	local emote = EL_Emotes[emoteKey]
+	return emote and emote.custom[1] == 1
+end
+
+-- Get emote count for debugging
+function EmoteLDB:GetEmoteCount()
+	local count = 0
+	for _ in pairs(EL_Emotes) do
+		count = count + 1
+	end
+	return count
+end
