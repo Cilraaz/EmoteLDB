@@ -473,9 +473,6 @@ function EmoteLDB:OnInitialize()
 		OnEnter = function(frame)
 			EmoteLDB:OnDataObjectEnter(frame)
 		end,
-		OnLeave = function(frame)
-			EmoteLDB:OnDataObjectLeave(frame)
-		end,
 	})
 	
 	-- Register with LibDBIcon for minimap button
@@ -502,6 +499,7 @@ function EmoteLDB:OnDataObjectClick(frame, button)
 		if tooltip:IsShown() then
 			tooltip:Hide()
 		else
+			ClearTooltipState()
 			tooltip:SmartAnchorTo(frame)
 			self:BuildTooltip()
 		end
@@ -510,11 +508,7 @@ end
 
 function EmoteLDB:OnDataObjectEnter(frame)
 	-- Show custom tooltip on mouseover
+	ClearTooltipState()
 	tooltip:SmartAnchorTo(frame)
 	self:BuildTooltip()
-end
-
-function EmoteLDB:OnDataObjectLeave(frame)
-	-- Rset to main menu when leaving tooltip
-	ClearTooltipState()
 end
