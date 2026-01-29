@@ -515,5 +515,6 @@ function EmoteLDB:OnDataObjectEnter(frame)
 end
 
 function EmoteLDB:OnDataObjectLeave(frame)
-	-- Tooltip will auto-hide via OnUpdate script
+	-- Rset to main menu when leaving tooltip
+	ClearTooltipState()
 end
