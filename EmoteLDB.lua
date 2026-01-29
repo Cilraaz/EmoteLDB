@@ -96,6 +96,8 @@ local dataObject
 -- State management
 local currentCategory = nil
 local emotesByReaction = {}
+local lastEmoteKey = nil
+local lastEmoteText = nil
 
 --------------------------------------------------------------------------------
 -- Utility Functions
@@ -199,19 +201,29 @@ local function ExecuteEmote(emoteKey)
 	
 	local emoteData = EL_Emotes[emoteKey]
 	local firstType = EL_Types[emoteData.types[1]]
-	
+
+	-- Track this as the last used emote
+	lastEmoteKey = emoteKey
+
 	-- Handle custom emotes
 	if firstType == L["Custom"] then
 		local targetName = UnitName("target")
 		local pronouns = GetPlayerPronouns()
-		
+
 		local emoteText = targetName and emoteData.target or emoteData.none
 		emoteText = ProcessEmoteText(emoteText, targetName, pronouns)
-		
+
+		lastEmoteText = "/" .. emoteKey .. " - " .. emoteText
 		DoEmote(emoteText, "EMOTE")
 	else
 		-- Standard emote command
+		lastEmoteText = "/" .. emoteKey
 		DoEmote(emoteKey)
+	end
+
+	-- Update LDB text if available
+	if dataObject then
+		dataObject.text = lastEmoteText
 	end
 end
 
@@ -453,13 +465,16 @@ function EmoteLDB:OnInitialize()
 	-- Create LibDataBroker object
 	dataObject = LibDataBroker:NewDataObject("EmoteLDB", {
 		type = "launcher",
-		text = "EmoteLDB",
-		icon = "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
+		text = lastEmoteText or "EmoteLDB",
+		icon = "Interface\\Icons\\Spell_Shadow_Charm",
 		OnClick = function(frame, button)
 			EmoteLDB:OnDataObjectClick(frame, button)
 		end,
-		OnTooltipShow = function(tooltip)
-			EmoteLDB:OnTooltipShow(tooltip)
+		OnEnter = function(frame)
+			EmoteLDB:OnDataObjectEnter(frame)
+		end,
+		OnLeave = function(frame)
+			EmoteLDB:OnDataObjectLeave(frame)
 		end,
 	})
 	
@@ -475,6 +490,15 @@ end
 
 function EmoteLDB:OnDataObjectClick(frame, button)
 	if button == "LeftButton" then
+		-- Left-click: Repeat last emote
+		if lastEmoteKey then
+			ExecuteEmote(lastEmoteKey)
+		else
+			-- No emote used yet, show a message
+			print("|cFFFFFF00EmoteLDB:|r No emote used yet. Mouse over the icon to select an emote.")
+		end
+	elseif button == "RightButton" then
+		-- Right-click: Toggle tooltip menu (for manual selection)
 		if tooltip:IsShown() then
 			tooltip:Hide()
 		else
@@ -484,7 +508,12 @@ function EmoteLDB:OnDataObjectClick(frame, button)
 	end
 end
 
-function EmoteLDB:OnTooltipShow(tt)
-	tt:AddLine("EmoteLDB")
-	tt:AddLine(L["Last Emote Used"] or "Click to access emotes", 1, 1, 1)
+function EmoteLDB:OnDataObjectEnter(frame)
+	-- Show custom tooltip on mouseover
+	tooltip:SmartAnchorTo(frame)
+	self:BuildTooltip()
+end
+
+function EmoteLDB:OnDataObjectLeave(frame)
+	-- Tooltip will auto-hide via OnUpdate script
 end
