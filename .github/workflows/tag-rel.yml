@@ -62,7 +62,7 @@ jobs:
       - name: Archive Release
         uses: thedoctor0/zip-release@master
         with:
-          filename: EmoteLDB-${{ env.tag }}"
+          filename: EmoteLDB-${{ env.tag }}.zip
           exclusions: '*.git* *.pkgmeta'
 
       # Create a release on GitHub
